@@ -4,18 +4,25 @@ from aiogram.fsm.context import FSMContext
 
 from ....application.dto.incoming_orders import ActivateWarehouseDTO
 from ....application.use_cases.warehouse_activation import ActivateWarehouseUseCase
+from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
 from ..states import WarehouseActivation
 
 
-async def start_command(
-    message: Message, 
-    warehouse_repository,
-    activate_warehouse_use_case: ActivateWarehouseUseCase
-):
+async def start_command(message: Message, **kwargs):
     """
     Обработчик команды /start.
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await message.reply("Ошибка: контейнер зависимостей не найден.")
+        return
+    
+    # Получаем зависимости из контейнера
+    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
+    warehouse_repository: WarehouseRepository = container.warehouse_repository()
+    
     # Проверяем, есть ли в сообщении start_payload (для deep-link)
     if hasattr(message, 'text') and ' ' in message.text:
         args = message.text.split(' ', 1)
@@ -73,14 +80,19 @@ async def activate_command(message: Message, state: FSMContext):
     await state.set_state(WarehouseActivation.waiting_for_activation_code)
 
 
-async def process_activation_code(
-    message: Message, 
-    activate_warehouse_use_case: ActivateWarehouseUseCase,
-    state: FSMContext
-):
+async def process_activation_code(message: Message, state: FSMContext, **kwargs):
     """
     Обработчик ввода кода активации.
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await message.reply("Ошибка: контейнер зависимостей не найден.")
+        return
+    
+    # Получаем зависимости из контейнера
+    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
+    
     activation_code = message.text.strip()
     
     # В реальном приложении нужно будет найти warehouse_uid по коду активации
@@ -101,15 +113,21 @@ async def process_activation_code(
     await state.clear()
 
 
-async def activate_warehouse_by_code_command(
-    message: Message, 
-    activate_warehouse_use_case: ActivateWarehouseUseCase
-):
+async def activate_warehouse_by_code_command(message: Message, **kwargs):
     """
     Обработчик команды активации склада по коду.
     
     Пример: /activate ABC123
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await message.reply("Ошибка: контейнер зависимостей не найден.")
+        return
+    
+    # Получаем зависимости из контейнера
+    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
+    
     # Получаем аргументы команды
     args = message.text.split()
     if len(args) != 2:

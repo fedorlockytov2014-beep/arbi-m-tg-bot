@@ -11,6 +11,7 @@ from warehouse_bot.config.settings import settings
 from warehouse_bot.src.infrastructure.di.container import Container
 from warehouse_bot.src.infrastructure.logging.config import setup_logging
 from warehouse_bot.src.presentation.bot.dispatcher import get_dispatcher
+from warehouse_bot.src.presentation.bot.middleware.di_middleware import DIMiddleware
 
 
 
@@ -24,10 +25,15 @@ async def lifespan(dp: Dispatcher):
     """
     # Инициализация DI контейнера
     container = Container()
+    container.config.from_dict(settings.model_dump())
     container.wire(modules=[sys.modules[__name__]])
 
     # Передаем контейнер в диспетчер
     dp.container = container
+    
+    # Регистрируем middleware для DI
+    dp.message.middleware(DIMiddleware(container))
+    dp.callback_query.middleware(DIMiddleware(container))
 
     logger.info("Бот запускается...")
     yield

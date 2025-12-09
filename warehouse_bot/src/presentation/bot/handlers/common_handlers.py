@@ -25,13 +25,19 @@ async def help_command(message: Message):
     await message.reply(help_text)
 
 
-async def orders_command(
-    message: Message,
-    warehouse_repository: WarehouseRepository
-):
+async def orders_command(message: Message, **kwargs):
     """
     Обработчик команды /orders.
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await message.reply("Ошибка: контейнер зависимостей не найден.")
+        return
+    
+    # Получаем репозиторий из контейнера
+    warehouse_repository: WarehouseRepository = container.warehouse_repository()
+    
     # Проверяем, привязан ли чат к складу
     warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
     
