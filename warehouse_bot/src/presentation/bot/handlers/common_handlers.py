@@ -1,12 +1,14 @@
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from dependency_injector.wiring import Provide, inject
 
 from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ...formatters.order_formatter import format_order_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
 
 
+@inject
 async def help_command(message: Message):
     """
     Обработчик команды /help.
@@ -25,19 +27,14 @@ async def help_command(message: Message):
     await message.reply(help_text)
 
 
-async def orders_command(message: Message, **kwargs):
+@inject
+async def orders_command(
+    message: Message,
+    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+):
     """
     Обработчик команды /orders.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await message.reply("Ошибка: контейнер зависимостей не найден.")
-        return
-    
-    # Получаем репозиторий из контейнера
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    
     # Проверяем, привязан ли чат к складу
     warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
     

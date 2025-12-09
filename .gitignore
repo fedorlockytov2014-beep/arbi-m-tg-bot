@@ -1,64 +1,42 @@
 ```
-# Python
+# Compiled Python files
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual environments
 venv/
-env/
-ENV/
 .venv/
-.env/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+env/
 
 # Logs
 *.log
 
-# Environment
+# Environment files
 .env
 .env.local
 *.env.*
 
-# Coverage
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Dependencies cache
+.mypy_cache/
+.pytest_cache/
 .coverage
 coverage/
 htmlcov/
-.coverage.*
 
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Build artifacts
+dist/
+build/
+target/
+.gradle/
 
-# Pytest
-.pytest_cache/
-
-# Temp files
-*.tmp
-*~
+# System files
 .DS_Store
 Thumbs.db
 ```

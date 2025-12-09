@@ -1,6 +1,7 @@
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from dependency_injector.wiring import Provide, inject
 
 from ....application.dto.incoming_orders import ActivateWarehouseDTO
 from ....application.use_cases.warehouse_activation import ActivateWarehouseUseCase
@@ -9,20 +10,15 @@ from ...keyboards.inline_keyboards import get_order_actions_keyboard
 from ..states import WarehouseActivation
 
 
-async def start_command(message: Message, **kwargs):
+@inject
+async def start_command(
+    message: Message,
+    activate_warehouse_use_case: ActivateWarehouseUseCase = Provide["activate_warehouse_use_case"],
+    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+):
     """
     Обработчик команды /start.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await message.reply("Ошибка: контейнер зависимостей не найден.")
-        return
-    
-    # Получаем зависимости из контейнера
-    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    
     # Проверяем, есть ли в сообщении start_payload (для deep-link)
     if hasattr(message, 'text') and ' ' in message.text:
         args = message.text.split(' ', 1)
