@@ -7,10 +7,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.redis import RedisStorage
 
-from ...config.settings import settings
-from ...infrastructure.di.container import Container
-from .dispatcher import get_dispatcher
-from ...infrastructure.logging.config import setup_logging
+from warehouse_bot.config.settings import settings
+from warehouse_bot.src.infrastructure.di.container import Container
+from warehouse_bot.src.infrastructure.logging.config import setup_logging
+from warehouse_bot.src.presentation.bot.dispatcher import get_dispatcher
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +25,10 @@ async def lifespan(dp: Dispatcher):
     # Инициализация DI контейнера
     container = Container()
     container.wire(modules=[sys.modules[__name__]])
-    
+
     # Передаем контейнер в диспетчер
     dp.container = container
-    
+
     logger.info("Бот запускается...")
     yield
     logger.info("Бот останавливается...")
@@ -38,26 +40,27 @@ async def main():
     """
     # Настройка логирования
     setup_logging()
-    
+
     # Создание сессии для бота
     session = AiohttpSession()
-    
+
     # Создание бота
     bot = Bot(
         token=settings.telegram.bot_token,
         session=session
     )
-    
+
     # Создание хранилища состояний FSM в Redis
+
     storage = RedisStorage.from_url(settings.cache.redis_url)
-    
+
     # Получение диспетчера
     dp = get_dispatcher(storage)
-    
+
     # Установка жизненного цикла
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
-    
+
     try:
         # Запуск бота в режиме long polling
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
@@ -80,4 +83,5 @@ async def on_shutdown(dispatcher: Dispatcher):
 
 
 if __name__ == "__main__":
+
     asyncio.run(main())

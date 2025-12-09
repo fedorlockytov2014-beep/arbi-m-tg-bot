@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union
 import redis.asyncio as redis
 from pydantic import BaseModel
 
-from ...config.settings import settings
+from warehouse_bot.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

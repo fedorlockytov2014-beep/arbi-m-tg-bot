@@ -1,7 +1,7 @@
 from typing import Union
 from pydantic import BaseModel, Field, field_validator
 
-from ...config.settings import settings
+from warehouse_bot.config.settings import settings
 
 
 class CookingTime(BaseModel):

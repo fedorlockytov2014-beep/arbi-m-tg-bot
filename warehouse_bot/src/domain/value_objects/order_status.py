@@ -1,5 +1,7 @@
 from enum import Enum
 
+from warehouse_bot.config.settings import settings
+
 
 class OrderStatus(str, Enum):
     """
@@ -35,7 +37,7 @@ class OrderStatus(str, Enum):
         Returns:
             list[OrderStatus]: Список статусов для отслеживания
         """
-        from ...config.settings import settings
+
         return [OrderStatus(value) for value in settings.statistics.included_statuses]
 
     @classmethod
@@ -46,5 +48,5 @@ class OrderStatus(str, Enum):
         Returns:
             list[OrderStatus]: Список статусов, не учитываемых в статистике
         """
-        from ...config.settings import settings
+
         return [OrderStatus(value) for value in settings.statistics.excluded_statuses]

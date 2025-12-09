@@ -86,14 +86,23 @@ class StatisticsSettings(BaseModel):
 class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: str = "JSON"
-    
-    telegram: TelegramSettings = TelegramSettings()
-    database: DatabaseSettings = DatabaseSettings()
-    cache: CacheSettings = CacheSettings()
-    crm: CRMSettings = CRMSettings()
-    photo_storage: PhotoStorageSettings = PhotoStorageSettings()
-    security: SecuritySettings = SecuritySettings()
-    statistics: StatisticsSettings = StatisticsSettings()
+
+    telegram: TelegramSettings
+    database: DatabaseSettings
+    cache: CacheSettings
+    crm: CRMSettings
+    photo_storage: PhotoStorageSettings
+    security: SecuritySettings
+    statistics: StatisticsSettings
+
+
+    # telegram: TelegramSettings = TelegramSettings()
+    # database: DatabaseSettings = DatabaseSettings()
+    # cache: CacheSettings = CacheSettings()
+    # crm: CRMSettings = CRMSettings()
+    # photo_storage: PhotoStorageSettings = PhotoStorageSettings()
+    # security: SecuritySettings = SecuritySettings()
+    # statistics: StatisticsSettings = StatisticsSettings()
 
     @field_validator('log_level')
     @classmethod
@@ -127,6 +136,10 @@ def load_config_from_yaml(file_path: str) -> dict:
 
 
 # Load settings
-config_path = os.getenv('CONFIG_PATH', 'config/config.yaml')
+
+SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CONFIG_PATH = os.path.join(SETTINGS_DIR, 'config.yaml')
+config_path = os.getenv('CONFIG_PATH', DEFAULT_CONFIG_PATH)
+# config_path = os.getenv('CONFIG_PATH', 'config.yaml')
 config_data = load_config_from_yaml(config_path)
 settings = Settings(**config_data)

@@ -7,7 +7,7 @@ import aiohttp
 from aiohttp import ClientError, ClientResponse, ClientSession
 from pydantic import BaseModel, ValidationError
 
-from ...config.settings import settings
+from warehouse_bot.config.settings import settings
 from ...application.exceptions import IntegrationError
 from ...domain.entities.order import Order
 from ...domain.value_objects.order_status import OrderStatus

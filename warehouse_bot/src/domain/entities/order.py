@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from warehouse_bot.config.settings import settings
 from ..value_objects.order_status import OrderStatus
 from ..value_objects.money import Money
 
@@ -87,7 +88,7 @@ class Order(BaseModel):
         Raises:
             ValueError: Если достигнуто максимальное количество фотографий
         """
-        from ...config.settings import settings
+
         if len(self.photos) >= settings.security.max_photos_per_order:
             raise ValueError(f"Maximum number of photos per order is {settings.security.max_photos_per_order}")
         self.photos.append(photo_url)

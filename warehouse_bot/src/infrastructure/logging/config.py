@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 import structlog
 
-from ...config.settings import settings
+from warehouse_bot.config.settings import settings
 
 
 def setup_logging():
