@@ -40,3 +40,5 @@ target/
 .DS_Store
 Thumbs.db
 ```
+
+warehouse_bot/config/config.yaml

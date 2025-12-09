@@ -8,13 +8,14 @@ from ....application.use_cases.warehouse_activation import ActivateWarehouseUseC
 from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
 from ..states import WarehouseActivation
+from ....infrastructure.di.container import Container
 
 
 @inject
 async def start_command(
     message: Message,
-    activate_warehouse_use_case: ActivateWarehouseUseCase = Provide["activate_warehouse_use_case"],
-    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+    activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
+    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
 ):
     """
     Обработчик команды /start.

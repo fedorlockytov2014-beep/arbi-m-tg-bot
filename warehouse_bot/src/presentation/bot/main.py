@@ -18,28 +18,6 @@ from warehouse_bot.src.presentation.bot.middleware.di_middleware import DIMiddle
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(dp: Dispatcher):
-    """
-    Управляет жизненным циклом приложения.
-    """
-    # Инициализация DI контейнера
-    container = Container()
-    container.config.from_dict(settings.model_dump())
-    container.wire(modules=[sys.modules[__name__]])
-
-    # Передаем контейнер в диспетчер
-    dp.container = container
-    
-    # Регистрируем middleware для DI
-    dp.message.middleware(DIMiddleware(container))
-    dp.callback_query.middleware(DIMiddleware(container))
-
-    logger.info("Бот запускается...")
-    yield
-    logger.info("Бот останавливается...")
-
-
 async def main():
     """
     Основная точка входа бота.
@@ -76,16 +54,36 @@ async def main():
 
 async def on_startup(dispatcher: Dispatcher):
     """
-    Вызывается при запуске бота.
+    Инициализация при запуске бота.
     """
-    logger.info("Бот запущен и готов к работе")
+    # Инициализация DI контейнера
+    container = Container()
+    container.config.from_dict(settings.model_dump())
+
+    # Подключаем DI к нужным модулям
+    # Замените "presentation" на реальный путь к вашим хендлерам
+    container.wire(packages=["warehouse_bot.src.presentation"])
+
+    # Сохраняем контейнер в диспетчере (опционально, если используете middleware)
+    dispatcher.container = container
+
+    # Регистрируем middleware (если вы НЕ используете @inject)
+    dispatcher.message.middleware(DIMiddleware(container))
+    dispatcher.callback_query.middleware(DIMiddleware(container))
+
+    logger.info("DI контейнер инициализирован. Бот запускается...")
 
 
 async def on_shutdown(dispatcher: Dispatcher):
     """
-    Вызывается при остановке бота.
+    Очистка при остановке бота.
     """
-    logger.info("Бот остановлен")
+    container = getattr(dispatcher, "container", None)
+    if container:
+        await container.shutdown_resources()  # если есть асинхронные ресурсы
+        container.unwire()  # отключаем DI
+
+    logger.info("Бот остановлен. Ресурсы освобождены.")
 
 
 if __name__ == "__main__":
