@@ -1,17 +1,38 @@
 ```
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 venv/
+env/
+ENV/
 .venv/
-.venv*/
-pyvenv.cfg
-pip-log.txt
-pip-delete-this-directory.txt
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 *.log
@@ -19,22 +40,25 @@ pip-delete-this-directory.txt
 # Environment
 .env
 .env.local
-.env.*
-!.env.example
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
+*.env.*
 
 # Coverage
 .coverage
 coverage/
 htmlcov/
+.coverage.*
 
-# Build artifacts
-dist/
-build/
-*.egg-info/
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Temp files
+*.tmp
+*~
+.DS_Store
+Thumbs.db
 ```

@@ -8,14 +8,20 @@ from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ...formatters.stats_formatter import format_today_statistics, format_weekly_statistics, format_monthly_statistics, format_error_statistics
 
 
-async def stats_command(
-    message: Message,
-    warehouse_repository: WarehouseRepository,
-    get_today_statistics_use_case: GetTodayStatisticsUseCase
-):
+async def stats_command(message: Message, **kwargs):
     """
     Обработчик команды /stats.
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await message.reply("Ошибка: контейнер зависимостей не найден.")
+        return
+    
+    # Получаем зависимости из контейнера
+    warehouse_repository: WarehouseRepository = container.warehouse_repository()
+    get_today_statistics_use_case: GetTodayStatisticsUseCase = container.get_today_statistics_use_case()
+    
     # Проверяем, привязан ли чат к складу
     warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
     
@@ -31,16 +37,22 @@ async def stats_command(
     )
 
 
-async def handle_stats_period_callback(
-    callback: CallbackQuery,
-    warehouse_repository: WarehouseRepository,
-    get_today_statistics_use_case: GetTodayStatisticsUseCase,
-    get_weekly_statistics_use_case: GetWeeklyStatisticsUseCase,
-    get_monthly_statistics_use_case: GetMonthlyStatisticsUseCase
-):
+async def handle_stats_period_callback(callback: CallbackQuery, **kwargs):
     """
     Обработчик выбора периода статистики.
     """
+    # Получаем контейнер из kwargs
+    container = kwargs.get('container')
+    if not container:
+        await callback.answer("Ошибка: контейнер зависимостей не найден.", show_alert=True)
+        return
+    
+    # Получаем зависимости из контейнера
+    warehouse_repository: WarehouseRepository = container.warehouse_repository()
+    get_today_statistics_use_case: GetTodayStatisticsUseCase = container.get_today_statistics_use_case()
+    get_weekly_statistics_use_case: GetWeeklyStatisticsUseCase = container.get_weekly_statistics_use_case()
+    get_monthly_statistics_use_case: GetMonthlyStatisticsUseCase = container.get_monthly_statistics_use_case()
+    
     period = callback.data.split('_')[1]  # stats_{period}
     
     # Получаем склад по chat_id
