@@ -109,9 +109,9 @@ class OrderService:
 
         if expected_ready_at is None:
             if order.accepted_at:
-                expected_ready_at = order.accepted_at + datetime.timedelta(minutes=cooking_time.minutes)
+                expected_ready_at = order.accepted_at + timedelta(minutes=cooking_time.minutes)
             else:
-                expected_ready_at = datetime.utcnow() + datetime.timedelta(minutes=cooking_time.minutes)
+                expected_ready_at = datetime.utcnow() + timedelta(minutes=cooking_time.minutes)
 
         # Создаём новый объект заказа с обновлёнными полями
         updated_order = order.copy(update={
