@@ -1,6 +1,7 @@
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from dependency_injector.wiring import Provide, inject
 
 from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, AddOrderPhotoDTO
 from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase
@@ -10,20 +11,15 @@ from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cookin
 from ..states import OrderProcessing
 
 
-async def handle_new_order_callback(callback: CallbackQuery, **kwargs):
+@inject
+async def handle_new_order_callback(
+    callback: CallbackQuery,
+    accept_order_use_case: AcceptOrderUseCase = Provide["accept_order_use_case"],
+    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+):
     """
     Обработчик нажатия кнопки 'Взять заказ'.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await callback.answer("Ошибка: контейнер зависимостей не найден.", show_alert=True)
-        return
-    
-    # Получаем зависимости из контейнера
-    accept_order_use_case: AcceptOrderUseCase = container.accept_order_use_case()
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    
     order_id = callback.data.split('_')[2]  # accept_order_{order_id}
     
     # Получаем склад по chat_id
@@ -149,20 +145,16 @@ async def handle_confirm_ready_callback(
     await callback.answer("Заказ готов к доставке")
 
 
-async def handle_cooking_time_message(message: Message, state: FSMContext, **kwargs):
+@inject
+async def handle_cooking_time_message(
+    message: Message,
+    state: FSMContext,
+    set_cooking_time_use_case: SetCookingTimeUseCase = Provide["set_cooking_time_use_case"],
+    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+):
     """
     Обработчик ввода времени готовки вручную.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await message.reply("Ошибка: контейнер зависимостей не найден.")
-        return
-    
-    # Получаем зависимости из контейнера
-    set_cooking_time_use_case: SetCookingTimeUseCase = container.set_cooking_time_use_case()
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    
     try:
         cooking_time_minutes = int(message.text)
         
