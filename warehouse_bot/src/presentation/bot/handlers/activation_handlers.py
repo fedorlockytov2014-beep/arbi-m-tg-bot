@@ -77,54 +77,56 @@ async def activate_command(message: Message, state: FSMContext):
     await state.set_state(WarehouseActivation.waiting_for_activation_code)
 
 
-async def process_activation_code(message: Message, state: FSMContext, **kwargs):
+@inject
+async def process_activation_code(
+    message: Message, 
+    state: FSMContext,
+    activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
+    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+):
     """
     Обработчик ввода кода активации.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await message.reply("Ошибка: контейнер зависимостей не найден.")
-        return
-    
-    # Получаем зависимости из контейнера
-    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
-    
     activation_code = message.text.strip()
     
-    # В реальном приложении нужно будет найти warehouse_uid по коду активации
-    # или использовать дополнительный сервис для поиска
-    # Пока используем упрощенную логику - нужно получить warehouse_uid по коду
+    # Ищем склад по коду активации
+    warehouse = await warehouse_repository.find_by_activation_code(activation_code)
+    if not warehouse:
+        await message.reply("Неверный код активации. Проверьте код или обратитесь к администратору.")
+        await state.clear()
+        return
     
-    # В реальности нужно использовать метод репозитория для поиска по коду
-    # warehouse = await warehouse_repository.find_by_activation_code(activation_code)
-    # if warehouse:
-    #     warehouse_uid = warehouse.uid
-    # else:
-    #     await message.reply("Неверный код активации. Проверьте код или обратитесь к администратору.")
-    #     return
+    # Активируем склад
+    dto = ActivateWarehouseDTO(
+        warehouse_uid=warehouse.uid,
+        activation_code=activation_code,
+        chat_id=message.chat.id
+    )
     
-    # Для демонстрации используем фиктивный UID
-    # В реальном приложении нужно будет реализовать поиск склада по коду активации
-    await message.reply("Функционал активации по коду в разработке. Пожалуйста, используйте deep-link активацию.")
+    try:
+        success = await activate_warehouse_use_case.execute(dto)
+        
+        if success:
+            await message.reply(f"Магазин {warehouse.name} успешно привязан к этому чату!")
+        else:
+            await message.reply("Не удалось активировать склад. Проверьте данные или обратитесь к администратору.")
+    except Exception as e:
+        await message.reply(f"Ошибка при активации склада: {str(e)}")
+    
     await state.clear()
 
 
-async def activate_warehouse_by_code_command(message: Message, **kwargs):
+@inject
+async def activate_warehouse_by_code_command(
+    message: Message,
+    activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
+    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+):
     """
     Обработчик команды активации склада по коду.
     
     Пример: /activate ABC123
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await message.reply("Ошибка: контейнер зависимостей не найден.")
-        return
-    
-    # Получаем зависимости из контейнера
-    activate_warehouse_use_case: ActivateWarehouseUseCase = container.activate_warehouse_use_case()
-    
     # Получаем аргументы команды
     args = message.text.split()
     if len(args) != 2:
@@ -133,10 +135,28 @@ async def activate_warehouse_by_code_command(message: Message, **kwargs):
     
     activation_code = args[1]
     
-    # В реальной реализации нужно сначала найти warehouse_uid по коду активации
-    # Для этого нужно использовать дополнительный метод репозитория или сервис
-    # Пока покажем сообщение о том, что функция в разработке
-    await message.reply("Функционал активации по коду в разработке. Пожалуйста, используйте deep-link активацию.")
+    # Ищем склад по коду активации
+    warehouse = await warehouse_repository.find_by_activation_code(activation_code)
+    if not warehouse:
+        await message.reply("Неверный код активации. Проверьте код или обратитесь к администратору.")
+        return
+    
+    # Активируем склад
+    dto = ActivateWarehouseDTO(
+        warehouse_uid=warehouse.uid,
+        activation_code=activation_code,
+        chat_id=message.chat.id
+    )
+    
+    try:
+        success = await activate_warehouse_use_case.execute(dto)
+        
+        if success:
+            await message.reply(f"Магазин {warehouse.name} успешно привязан к этому чату!")
+        else:
+            await message.reply("Не удалось активировать склад. Проверьте данные или обратитесь к администратору.")
+    except Exception as e:
+        await message.reply(f"Ошибка при активации склада: {str(e)}")
 
 
 def setup_activation_handlers(dp: Dispatcher):
