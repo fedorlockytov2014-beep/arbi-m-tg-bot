@@ -8,7 +8,6 @@ from ...formatters.order_formatter import format_order_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
 
 
-@inject
 async def help_command(message: Message):
     """
     Обработчик команды /help.
