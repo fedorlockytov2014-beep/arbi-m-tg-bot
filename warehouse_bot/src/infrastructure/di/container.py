@@ -23,8 +23,14 @@ class Container(containers.DeclarativeContainer):
     order_service = Singleton(OrderService)
     
     # Репозитории
-    order_repository = Singleton(OrderRepositoryImpl)
-    warehouse_repository = Singleton(WarehouseRepositoryImpl)
+    order_repository = Singleton(
+        OrderRepositoryImpl,
+        crm_client=crm_client
+    )
+    warehouse_repository = Singleton(
+        WarehouseRepositoryImpl,
+        crm_client=crm_client
+    )
     
     # Кеши
     stats_cache = Singleton(StatsCache)

@@ -1,11 +1,10 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Optional
 
 import aiohttp
-from aiohttp import ClientError, ClientResponse, ClientSession
-from pydantic import BaseModel, ValidationError
+from aiohttp import ClientError, ClientSession
 
 from warehouse_bot.config.settings import settings
 from ...application.exceptions import IntegrationError
@@ -13,7 +12,7 @@ from ...domain.entities.order import Order
 from ...domain.value_objects.order_status import OrderStatus
 
 logger = logging.getLogger(__name__)
-T = TypeVar("T", bound=BaseModel)
+
 
 class CRMClient:
     """
@@ -294,7 +293,7 @@ class CRMClient:
         # Добавляем фильтр по статусам
         for i, status in enumerate(statuses):
             params[f"filters[status][$in][{i}]"] = status
-        
+
         return await self._make_request(
             method="GET",
             endpoint="/orders",
@@ -316,9 +315,9 @@ class CRMClient:
         """
         data = {
             "order_id": str(order.id),
-            "warehouse_id": order.warehouse_id,
+            "warehouse_id": str(order.warehouse_id),
             "order_number": order.order_number,
-            "created_at": order.created_at.isoformat(),
+            "created_at": order.created_at.isoformat() if hasattr(order, 'created_at') and order.created_at else "",
             "customer_name": order.customer_name,
             "customer_phone": order.customer_phone,
             "delivery_address": order.delivery_address,
@@ -340,104 +339,4 @@ class CRMClient:
             endpoint="/orders",
             data=data,
             expected_status=201
-        )
-        
-    async def update_order_status(
-        self,
-        order_id: str,
-        status: OrderStatus,
-        cooking_time_minutes: Optional[int] = None,
-        expected_ready_at: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Обновляет статус заказа в CRM.
-        
-        Args:
-            order_id: ID заказа
-            status: Новый статус заказа
-            cooking_time_minutes: Время приготовления в минутах (опционально)
-            expected_ready_at: Ожидаемое время готовности (опционально)
-            
-        Returns:
-            Dict[str, Any]: Ответ CRM системы
-            
-        Raises:
-            IntegrationError: При ошибках интеграции
-        """
-        data: Dict[str, Any] = {
-            "status": status.value
-        }
-        
-        if cooking_time_minutes is not None:
-            data["cooking_time_minutes"] = cooking_time_minutes
-            
-        if expected_ready_at is not None:
-            data["expected_ready_at"] = expected_ready_at
-            
-        return await self._make_request(
-            method="PATCH",
-            endpoint=f"/orders/{order_id}/status",
-            data=data
-        )
-        
-    async def upload_order_photos(
-        self,
-        order_id: str,
-        photo_urls: list[str]
-    ) -> Dict[str, Any]:
-        """
-        Загружает фотографии заказа в CRM.
-        
-        Args:
-            order_id: ID заказа
-            photo_urls: Список URL фотографий
-            
-        Returns:
-            Dict[str, Any]: Ответ CRM системы
-            
-        Raises:
-            IntegrationError: При ошибках интеграции
-        """
-        data = {
-            "photos": [
-                {"url": url} for url in photo_urls
-            ]
-        }
-        
-        return await self._make_request(
-            method="POST",
-            endpoint=f"/orders/{order_id}/photos",
-            data=data
-        )
-        
-    async def get_sales_statistics(
-        self,
-        warehouse_id: str,
-        date_from: str,
-        date_to: str
-    ) -> Dict[str, Any]:
-        """
-        Получает статистику продаж из CRM для указанного периода.
-        
-        Args:
-            warehouse_id: ID склада
-            date_from: Начальная дата в формате ISO 8601
-            date_to: Конечная дата в формате ISO 8601
-            
-        Returns:
-            Dict[str, Any]: Статистика продаж
-            
-        Raises:
-            IntegrationError: При ошибках интеграции
-        """
-        params = {
-            "warehouse_id": warehouse_id,
-            "date_from": date_from,
-            "date_to": date_to
-        }
-        
-        return await self._make_request(
-            method="GET",
-            endpoint="/statistics/sales",
-            params=params
         )

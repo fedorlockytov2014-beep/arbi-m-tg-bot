@@ -1,39 +1,43 @@
 ```
+# Backup files
+*.backup
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
+
+# Virtual environments
 .venv/
-.venv*/
-pyproject.toml
-poetry.lock
+venv/
+env/
+
+# Dependencies
+node_modules/
+.pip/
+.tox/
+
+# Build artifacts
+build/
+dist/
 *.egg-info/
-.eggs/
 
 # Logs
 *.log
-*.out
-
-# Environment
-.env
-.env.local
-.env.*
-.ENV
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
-# Build artifacts
-build/
-dist/
-*.egg
-*.whl
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env.*
 ```
