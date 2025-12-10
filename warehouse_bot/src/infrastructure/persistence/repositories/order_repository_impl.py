@@ -403,9 +403,9 @@ class OrderRepositoryImpl(OrderRepository):
         status = OrderStatus.from_value(status_value)
         
         return Order(
-            id=OrderId(order_data.get("id", "")),
+            id=order_data.get("id", ""),
             order_number=order_data.get("order_number", ""),
-            warehouse_id=WarehouseId(order_data.get("warehouse_id", "")),
+            warehouse_id=order_data.get("warehouse_id", ""),
             customer_name=order_data.get("customer_name", ""),
             customer_phone=order_data.get("customer_phone", ""),
             delivery_address=order_data.get("delivery_address", ""),
