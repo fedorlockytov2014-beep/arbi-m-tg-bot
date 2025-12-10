@@ -5,8 +5,9 @@ from typing import Optional
 from ..entities.order import Order
 from ..value_objects.cooking_time import CookingTime
 from ..value_objects.order_status import OrderStatus
+from ...infrastructure.logging import get_logger, log_server_action, log_error, log_warning
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OrderService:
@@ -64,7 +65,17 @@ class OrderService:
             ValueError: Если заказ уже принят или статус не позволяет принятие
         """
         if order.status != OrderStatus.SENT_TO_PARTNER:
-            raise ValueError(f"Заказ со статусом {order.status} не может быть принят партнёром")
+            error_msg = f"Заказ со статусом {order.status} не может быть принят партнёром"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "expected_status": OrderStatus.SENT_TO_PARTNER.value
+                }
+            )
+            raise ValueError(error_msg)
 
         if accepted_at is None:
             accepted_at = datetime.utcnow()
@@ -75,11 +86,13 @@ class OrderService:
             "accepted_at": accepted_at
         })
 
-        logger.info(
-            "Заказ принят партнёром",
+        log_server_action(
+            logger,
+            action="order_accepted_by_partner",
+            result="success",
             order_id=updated_order.id,
             warehouse_id=updated_order.warehouse_id,
-            accepted_at=accepted_at
+            accepted_at=accepted_at.isoformat() if accepted_at else None
         )
 
         return updated_order
@@ -105,7 +118,17 @@ class OrderService:
             ValueError: Если заказ не в подходящем статусе
         """
         if order.status not in [OrderStatus.ACCEPTED_BY_PARTNER, OrderStatus.COOKING]:
-            raise ValueError(f"Время приготовления можно установить только для заказов в статусе {OrderStatus.ACCEPTED_BY_PARTNER} или {OrderStatus.COOKING}")
+            error_msg = f"Время приготовления можно установить только для заказов в статусе {OrderStatus.ACCEPTED_BY_PARTNER} или {OrderStatus.COOKING}"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "allowed_statuses": [OrderStatus.ACCEPTED_BY_PARTNER.value, OrderStatus.COOKING.value]
+                }
+            )
+            raise ValueError(error_msg)
 
         if expected_ready_at is None:
             if order.accepted_at:
@@ -120,11 +143,13 @@ class OrderService:
             "expected_ready_at": expected_ready_at
         })
 
-        logger.info(
-            "Установлено время приготовления заказа",
+        log_server_action(
+            logger,
+            action="cooking_time_set",
+            result="success",
             order_id=updated_order.id,
             cooking_time_minutes=cooking_time.minutes,
-            expected_ready_at=expected_ready_at
+            expected_ready_at=expected_ready_at.isoformat() if expected_ready_at else None
         )
 
         return updated_order
@@ -143,15 +168,27 @@ class OrderService:
             ValueError: Если заказ не в подходящем статусе
         """
         if order.status != OrderStatus.COOKING:
-            raise ValueError(f"Заказ со статусом {order.status} не может быть отмечен как готовый к доставке")
+            error_msg = f"Заказ со статусом {order.status} не может быть отмечен как готовый к доставке"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "expected_status": OrderStatus.COOKING.value
+                }
+            )
+            raise ValueError(error_msg)
 
         # Создаём новый объект заказа с обновлённым статусом
         updated_order = order.copy(update={
             "status": OrderStatus.READY_FOR_DELIVERY
         })
 
-        logger.info(
-            "Заказ отмечен как готовый к доставке",
+        log_server_action(
+            logger,
+            action="order_marked_as_ready_for_delivery",
+            result="success",
             order_id=updated_order.id
         )
 
@@ -171,7 +208,17 @@ class OrderService:
             ValueError: Если заказ не в подходящем статусе
         """
         if order.status != OrderStatus.READY_FOR_DELIVERY:
-            raise ValueError(f"Курьера можно назначить только для заказов со статусом {OrderStatus.READY_FOR_DELIVERY}")
+            error_msg = f"Курьера можно назначить только для заказов со статусом {OrderStatus.READY_FOR_DELIVERY}"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "expected_status": OrderStatus.READY_FOR_DELIVERY.value
+                }
+            )
+            raise ValueError(error_msg)
 
         # Создаём новый объект заказа с обновлёнными полями
         updated_order = order.copy(update={
@@ -179,8 +226,10 @@ class OrderService:
             "courier_assigned_at": datetime.utcnow()
         })
 
-        logger.info(
-            "Курьер назначен для заказа",
+        log_server_action(
+            logger,
+            action="courier_assigned_to_order",
+            result="success",
             order_id=updated_order.id
         )
 
@@ -200,7 +249,17 @@ class OrderService:
             ValueError: Если заказ не в подходящем статусе
         """
         if order.status != OrderStatus.ON_DELIVERY:
-            raise ValueError(f"Заказ можно отметить как доставленный только из статуса {OrderStatus.ON_DELIVERY}")
+            error_msg = f"Заказ можно отметить как доставленный только из статуса {OrderStatus.ON_DELIVERY}"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "expected_status": OrderStatus.ON_DELIVERY.value
+                }
+            )
+            raise ValueError(error_msg)
 
         # Создаём новый объект заказа с обновлёнными полями
         updated_order = order.copy(update={
@@ -208,8 +267,10 @@ class OrderService:
             "delivered_at": datetime.utcnow()
         })
 
-        logger.info(
-            "Заказ отмечен как доставленный",
+        log_server_action(
+            logger,
+            action="order_marked_as_delivered",
+            result="success",
             order_id=updated_order.id
         )
 
@@ -229,17 +290,29 @@ class OrderService:
             ValueError: Если заказ уже доставлен или отменён
         """
         if order.status in [OrderStatus.DELIVERED, OrderStatus.CANCELLED]:
-            raise ValueError(f"Заказ со статусом {order.status} не может быть отменён")
+            error_msg = f"Заказ со статусом {order.status} не может быть отменён"
+            log_error(
+                logger,
+                ValueError(error_msg),
+                context={
+                    "order_id": order.id,
+                    "current_status": order.status.value,
+                    "forbidden_statuses": [OrderStatus.DELIVERED.value, OrderStatus.CANCELLED.value]
+                }
+            )
+            raise ValueError(error_msg)
 
         # Создаём новый объект заказа с обновлённым статусом
         updated_order = order.copy(update={
             "status": OrderStatus.CANCELLED
         })
 
-        logger.info(
-            "Заказ отменён",
+        log_server_action(
+            logger,
+            action="order_cancelled",
+            result="success",
             order_id=updated_order.id,
-            previous_status=order.status
+            previous_status=order.status.value
         )
 
         return updated_order
