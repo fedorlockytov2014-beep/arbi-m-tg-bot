@@ -2,6 +2,9 @@ from typing import List, Optional
 
 from ....domain.entities.warehouse import Warehouse
 from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....infrastructure.logging import get_logger, log_server_action, log_error
+
+logger = get_logger(__name__)
 
 
 class WarehouseRepositoryImpl(WarehouseRepository):
@@ -31,7 +34,30 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Получает склад по UID.
         """
-        return self._warehouses.get(warehouse_uid)
+        log_server_action(
+            logger,
+            action="warehouse_get_by_uid",
+            warehouse_uid=warehouse_uid
+        )
+        
+        result = self._warehouses.get(warehouse_uid)
+        
+        if result:
+            log_server_action(
+                logger,
+                action="warehouse_found_by_uid",
+                result="success",
+                warehouse_uid=warehouse_uid
+            )
+        else:
+            log_server_action(
+                logger,
+                action="warehouse_not_found_by_uid",
+                result="not_found",
+                warehouse_uid=warehouse_uid
+            )
+        
+        return result
     
     async def get_by_telegram_chat_id(self, chat_id: int) -> Optional[Warehouse]:
         """
@@ -59,8 +85,35 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Обновляет склад.
         """
-        self._warehouses[warehouse.uid] = warehouse
-        return warehouse
+        log_server_action(
+            logger,
+            action="warehouse_update",
+            warehouse_uid=warehouse.uid,
+            warehouse_id=warehouse.id
+        )
+        
+        try:
+            self._warehouses[warehouse.uid] = warehouse
+            result = warehouse
+            
+            log_server_action(
+                logger,
+                action="warehouse_updated_successfully",
+                result="success",
+                warehouse_uid=warehouse.uid
+            )
+            
+            return result
+        except Exception as e:
+            log_error(
+                logger,
+                e,
+                context={
+                    "warehouse_uid": warehouse.uid,
+                    "warehouse_id": warehouse.id
+                }
+            )
+            raise
     
     async def delete(self, warehouse_id: str) -> bool:
         """

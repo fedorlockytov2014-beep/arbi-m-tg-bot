@@ -6,12 +6,23 @@ from dependency_injector.wiring import Provide, inject
 from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ...formatters.order_formatter import format_order_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
+from ....infrastructure.logging import get_logger, log_user_action, log_server_action, log_error
+
+logger = get_logger(__name__)
 
 
 async def help_command(message: Message):
     """
     Обработчик команды /help.
     """
+    log_user_action(
+        logger,
+        user_id=message.from_user.id,
+        action="help_command",
+        chat_id=message.chat.id,
+        message_id=message.message_id
+    )
+    
     help_text = (
         "🤖 Помощь по боту склада\n\n"
         "Доступные команды:\n"
@@ -23,7 +34,16 @@ async def help_command(message: Message):
         "После активации склада вы будете получать новые заказы "
         "и сможете их обрабатывать через кнопки."
     )
+    
     await message.reply(help_text)
+    
+    log_server_action(
+        logger,
+        action="help_response_sent",
+        result="success",
+        user_id=message.from_user.id,
+        chat_id=message.chat.id
+    )
 
 
 @inject
@@ -34,16 +54,56 @@ async def orders_command(
     """
     Обработчик команды /orders.
     """
-    # Проверяем, привязан ли чат к складу
-    warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
+    log_user_action(
+        logger,
+        user_id=message.from_user.id,
+        action="orders_command",
+        chat_id=message.chat.id,
+        message_id=message.message_id
+    )
     
-    if not warehouse:
-        await message.reply("Сначала активируйте склад. Используйте команду /start и перейдите по ссылке активации.")
-        return
-    
-    # В реальном приложении здесь нужно получить новые заказы для склада
-    # Пока покажем заглушку
-    await message.reply("Новых заказов пока нет. Как только они поступят, они появятся здесь.")
+    try:
+        # Проверяем, привязан ли чат к складу
+        warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
+        
+        if not warehouse:
+            response_text = "Сначала активируйте склад. Используйте команду /start и перейдите по ссылке активации."
+            await message.reply(response_text)
+            
+            log_server_action(
+                logger,
+                action="warehouse_not_found_for_chat",
+                result="warning",
+                user_id=message.from_user.id,
+                chat_id=message.chat.id
+            )
+            return
+        
+        # В реальном приложении здесь нужно получить новые заказы для склада
+        # Пока покажем заглушку
+        response_text = "Новых заказов пока нет. Как только они поступят, они появятся здесь."
+        await message.reply(response_text)
+        
+        log_server_action(
+            logger,
+            action="orders_response_sent",
+            result="success",
+            user_id=message.from_user.id,
+            chat_id=message.chat.id,
+            warehouse_uid=warehouse.uid
+        )
+        
+    except Exception as e:
+        log_error(
+            logger,
+            e,
+            context={
+                "user_id": message.from_user.id,
+                "chat_id": message.chat.id,
+                "command": "/orders"
+            }
+        )
+        await message.reply("Произошла ошибка при обработке запроса. Пожалуйста, попробуйте позже.")
 
 
 def setup_common_handlers(dp: Dispatcher):
