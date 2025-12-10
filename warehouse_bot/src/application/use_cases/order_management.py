@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 
 from ...application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO
@@ -13,8 +12,9 @@ from ...domain.repositories.warehouse_repository import WarehouseRepository
 from ...domain.services.order_service import OrderService
 from ...domain.value_objects.cooking_time import CookingTime
 from ...domain.value_objects.order_status import OrderStatus
+from ...infrastructure.logging.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class AcceptOrderUseCase:
     """
@@ -70,35 +70,29 @@ class AcceptOrderUseCase:
             WarehouseNotFoundException: Если склад не найден
             OrderAlreadyAcceptedException: Если заказ уже принят другим партнером
         """
-        logger.info(
+        await logger.info(
             "Начало выполнения сценария принятия заказа",
-            extra={
-                "order_id": data.order_id,
-                "chat_id": data.chat_id,
-                "warehouse_id": data.warehouse_uid
-            }
+            order_id=data.order_id,
+            chat_id=data.chat_id,
+            warehouse_id=data.warehouse_uid
         )
         
         # Проверка, что склад существует и привязан к чату
         warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
         if not warehouse:
-            logger.error(
+            await logger.error(
                 "Склад не найден при попытке принять заказ",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "order_id": data.order_id
-                }
+                warehouse_uid=data.warehouse_uid,
+                order_id=data.order_id
             )
             raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            logger.error(
+            await logger.error(
                 "Попытка принять заказ для чужого склада",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "chat_id": data.chat_id,
-                    "warehouse_chat_id": warehouse.telegram_chat_id
-                }
+                warehouse_uid=data.warehouse_uid,
+                chat_id=data.chat_id,
+                warehouse_chat_id=warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
                 f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
@@ -107,30 +101,24 @@ class AcceptOrderUseCase:
         # Получение заказа
         order = await self.order_repository.get_by_id(data.order_id)
         if not order:
-            logger.error(
+            await logger.error(
                 "Заказ не найден при попытке принять",
-                extra={
-                    "order_id": data.order_id
-                }
+                order_id=data.order_id
             )
             raise OrderNotFoundException(f"Заказ с ID {data.order_id} не найден")
             
         # Проверка, что заказ еще не принят
         if order.status != OrderStatus.SENT_TO_PARTNER:
-            logger.warning(
+            await logger.warning(
                 "Попытка принять заказ, который уже в работе",
-                extra={
-                    "order_id": data.order_id,
-                    "current_status": order.status.value
-                }
+                order_id=data.order_id,
+                current_status=order.status.value
             )
             # Если заказ уже принят этим же складом - возвращаем его без ошибки
             if order.warehouse_id == data.warehouse_uid and order.status == OrderStatus.ACCEPTED_BY_PARTNER:
-                logger.info(
+                await logger.info(
                     "Заказ уже принят этим складом, возврат текущего состояния",
-                    extra={
-                        "order_id": data.order_id
-                    }
+                    order_id=data.order_id
                 )
                 return order
                 
@@ -140,13 +128,11 @@ class AcceptOrderUseCase:
             
         # Проверка, что заказ относится к этому складу
         if order.warehouse_id != data.warehouse_uid:
-            logger.error(
+            await logger.error(
                 "Попытка принять заказ, не относящийся к складу",
-                extra={
-                    "order_id": data.order_id,
-                    "order_warehouse_id": order.warehouse_id,
-                    "target_warehouse_id": data.warehouse_uid
-                }
+                order_id=data.order_id,
+                order_warehouse_id=order.warehouse_id,
+                target_warehouse_id=data.warehouse_uid
             )
             raise OrderNotFoundException(f"Заказ с ID {data.order_id} не относится к складу {data.warehouse_uid}")
             
@@ -168,43 +154,33 @@ class AcceptOrderUseCase:
                         status="Ожидает подтверждения"  # Это соответствует accepted_by_partner
                     )
                     
-                logger.info(
+                await logger.info(
                     "Статус заказа успешно обновлен в CRM системе",
-                    extra={
-                        "order_id": result.id,
-                        "new_status": "Ожидает подтверждения"
-                    }
+                    order_id=result.id,
+                    new_status="Ожидает подтверждения"
                 )
             except Exception as e:
-                logger.error(
+                await logger.error(
                     "Ошибка при обновлении статуса заказа в CRM системе",
-                    extra={
-                        "order_id": result.id,
-                        "error": str(e),
-                        "exc_info": True
-                    }
+                    order_id=result.id,
+                    error=str(e)
                 )
                 # Не прерываем выполнение, так как локальное обновление прошло успешно
                 
-            logger.info(
+            await logger.info(
                 "Заказ успешно принят",
-                extra={
-                    "order_id": result.id,
-                    "warehouse_id": result.warehouse_id,
-                    "accepted_at": result.accepted_at
-                }
+                order_id=result.id,
+                warehouse_id=result.warehouse_id,
+                accepted_at=result.accepted_at
             )
             
             return result
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при принятии заказа",
-                extra={
-                    "order_id": data.order_id,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                order_id=data.order_id,
+                error=str(e)
             )
             raise
 
@@ -257,14 +233,12 @@ class SetCookingTimeUseCase:
             WarehouseNotFoundException: Если склад не найден
             InvalidOrderStatusException: Если заказ в недопустимом статусе
         """
-        logger.info(
+        await logger.info(
             "Начало выполнения сценария установки времени приготовления",
-            extra={
-                "order_id": data.order_id,
-                "chat_id": data.chat_id,
-                "warehouse_id": data.warehouse_uid,
-                "cooking_time_minutes": data.cooking_time_minutes
-            }
+            order_id=data.order_id,
+            chat_id=data.chat_id,
+            warehouse_id=data.warehouse_uid,
+            cooking_time_minutes=data.cooking_time_minutes
         )
         
         # Проверка, что склад существует и привязан к чату
@@ -359,23 +333,18 @@ class SetCookingTimeUseCase:
                     }
                 )
             except Exception as e:
-                logger.error(
+                await logger.error(
                     "Ошибка при обновлении статуса заказа в CRM системе",
-                    extra={
-                        "order_id": result.id,
-                        "error": str(e),
-                        "exc_info": True
-                    }
+                    order_id=result.id,
+                    error=str(e)
                 )
                 # Не прерываем выполнение, так как локальное обновление прошло успешно
             
-            logger.info(
+            await logger.info(
                 "Время приготовления успешно установлено",
-                extra={
-                    "order_id": result.id,
-                    "cooking_time_minutes": result.cooking_time_minutes,
-                    "expected_ready_at": result.expected_ready_at
-                }
+                order_id=result.id,
+                cooking_time_minutes=result.cooking_time_minutes,
+                expected_ready_at=result.expected_ready_at
             )
             
             return result

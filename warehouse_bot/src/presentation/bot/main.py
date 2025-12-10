@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -8,13 +7,13 @@ from aiogram.fsm.storage.redis import RedisStorage
 from warehouse_bot.config.settings import settings
 from warehouse_bot.src.infrastructure.di.container import Container
 from warehouse_bot.src.infrastructure.logging.config import setup_logging
+from warehouse_bot.src.infrastructure.logging.utils import get_logger
 from warehouse_bot.src.presentation.bot.dispatcher import get_dispatcher
 from warehouse_bot.src.presentation.bot.middleware.di_middleware import DIMiddleware
 from warehouse_bot.src.presentation.bot.webhook_handler import WebhookHandler
 
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def main():
@@ -106,7 +105,7 @@ async def on_startup(dispatcher: Dispatcher):
     dispatcher.message.middleware(DIMiddleware(container))
     dispatcher.callback_query.middleware(DIMiddleware(container))
 
-    logger.info("DI контейнер инициализирован. Бот запускается...")
+    await logger.info("DI контейнер инициализирован. Бот запускается...")
 
 
 async def on_shutdown(dispatcher: Dispatcher):
@@ -118,7 +117,7 @@ async def on_shutdown(dispatcher: Dispatcher):
         await container.shutdown_resources()  # если есть асинхронные ресурсы
         container.unwire()  # отключаем DI
 
-    logger.info("Бот остановлен. Ресурсы освобождены.")
+    await logger.info("Бот остановлен. Ресурсы освобождены.")
 
 
 if __name__ == "__main__":

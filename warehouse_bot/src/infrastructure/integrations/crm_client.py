@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -9,8 +8,9 @@ from aiohttp import ClientError, ClientSession
 from warehouse_bot.config.settings import settings
 from ...application.exceptions import IntegrationError
 from ...domain.entities.order import Order
+from ...infrastructure.logging.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CRMClient:
@@ -116,15 +116,13 @@ class CRMClient:
         if "token" in log_data:
             log_data["token"] = "*****"
             
-        logger.debug(
+        await logger.debug(
             "Отправка запроса к CRM API",
-            extra={
-                "method": method,
-                "url": url,
-                "params": params,
-                "data": log_data,
-                "timeout": self.timeout
-            }
+            method=method,
+            url=url,
+            params=params,
+            data=log_data,
+            timeout=self.timeout
         )
         
         retry_count = 0
@@ -146,13 +144,11 @@ class CRMClient:
                     except json.JSONDecodeError:
                         response_json = {"raw_response": response_text}
                         
-                    logger.debug(
+                    await logger.debug(
                         "Получен ответ от CRM API",
-                        extra={
-                            "status": response.status,
-                            "url": url,
-                            "response": response_json
-                        }
+                        status=response.status,
+                        url=url,
+                        response=response_json
                     )
                     
                     # Проверка статуса ответа
@@ -175,26 +171,22 @@ class CRMClient:
                 retry_count += 1
                 
                 if retry_count > self.max_retries:
-                    logger.error(
+                    await logger.error(
                         "Превышено максимальное количество попыток запроса к CRM API",
-                        extra={
-                            "error": str(e),
-                            "retry_count": retry_count,
-                            "max_retries": self.max_retries
-                        }
+                        error=str(e),
+                        retry_count=retry_count,
+                        max_retries=self.max_retries
                     )
                     raise IntegrationError(
                         f"Не удалось выполнить запрос к CRM API после {self.max_retries} попыток: {str(e)}"
                     ) from e
                     
-                logger.warning(
+                await logger.warning(
                     "Ошибка при запросе к CRM API, повторная попытка",
-                    extra={
-                        "error": str(e),
-                        "retry_count": retry_count,
-                        "max_retries": self.max_retries,
-                        "delay": self.retry_delay
-                    }
+                    error=str(e),
+                    retry_count=retry_count,
+                    max_retries=self.max_retries,
+                    delay=self.retry_delay
                 )
                 await asyncio.sleep(self.retry_delay)
                 
