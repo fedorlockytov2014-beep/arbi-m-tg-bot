@@ -69,6 +69,12 @@ class PhotoStorageSettings(BaseModel):
     local: LocalStorageSettings = LocalStorageSettings()
 
 
+class WebhookSettings(BaseModel):
+    host: str = "0.0.0.0"
+    port: int = 8000
+    secret_key: str = "your-webhook-secret-key"
+
+
 class SecuritySettings(BaseModel):
     admin_ids: List[int] = [123456789, 987654321]
     max_activation_attempts: int = 3
