@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import sys
-from contextlib import asynccontextmanager
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession

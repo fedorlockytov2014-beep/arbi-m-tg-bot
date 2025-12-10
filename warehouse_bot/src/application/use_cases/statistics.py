@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from ...application.dto.statistics import (
     MonthlyStatisticsDTO,
-    StatisticsByDateRangeDTO,
     TodayStatisticsDTO,
     WeeklyStatisticsDTO
 )

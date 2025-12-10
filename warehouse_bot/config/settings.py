@@ -103,14 +103,6 @@ class Settings(BaseSettings):
     webhook: WebhookSettings = WebhookSettings()
 
 
-    # telegram: TelegramSettings = TelegramSettings()
-    # database: DatabaseSettings = DatabaseSettings()
-    # cache: CacheSettings = CacheSettings()
-    # crm: CRMSettings = CRMSettings()
-    # photo_storage: PhotoStorageSettings = PhotoStorageSettings()
-    # security: SecuritySettings = SecuritySettings()
-    # statistics: StatisticsSettings = StatisticsSettings()
-
     @field_validator('log_level')
     @classmethod
     def validate_log_level(cls, v):

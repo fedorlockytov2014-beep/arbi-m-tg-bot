@@ -17,7 +17,7 @@ async def help_command(message: Message):
     """
     Обработчик команды /help.
     """
-    log_user_action(
+    await log_user_action(
         logger,
         user_id=message.from_user.id,
         action="help_command",
@@ -39,7 +39,7 @@ async def help_command(message: Message):
     
     await message.reply(help_text)
     
-    log_server_action(
+    await log_server_action(
         logger,
         action="help_response_sent",
         result="success",
@@ -57,7 +57,7 @@ async def orders_command(
     """
     Обработчик команды /orders.
     """
-    log_user_action(
+    await log_user_action(
         logger,
         user_id=message.from_user.id,
         action="orders_command",
@@ -73,7 +73,7 @@ async def orders_command(
             response_text = "Сначала активируйте склад. Используйте команду /start и перейдите по ссылке активации."
             await message.reply(response_text)
             
-            log_server_action(
+            await log_server_action(
                 logger,
                 action="warehouse_not_found_for_chat",
                 result="warning",
@@ -101,7 +101,7 @@ async def orders_command(
                     reply_markup=get_order_actions_keyboard(order.id)
                 )
         
-        log_server_action(
+        await log_server_action(
             logger,
             action="orders_response_sent",
             result="success",
@@ -112,7 +112,7 @@ async def orders_command(
         )
         
     except Exception as e:
-        log_error(
+        await log_error(
             logger,
             e,
             context={

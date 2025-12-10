@@ -22,27 +22,27 @@ class Logger:
     def __init__(self, name: str):
         self._logger = structlog.get_logger(name)
     
-    def debug(self, message: str, **kwargs: Any) -> None:
+    async def debug(self, message: str, **kwargs: Any) -> None:
         """Логирование отладочной информации."""
         self._logger.debug(message, **kwargs)
     
-    def info(self, message: str, **kwargs: Any) -> None:
+    async def info(self, message: str, **kwargs: Any) -> None:
         """Логирование информационных сообщений."""
         self._logger.info(message, **kwargs)
     
-    def warning(self, message: str, **kwargs: Any) -> None:
+    async def warning(self, message: str, **kwargs: Any) -> None:
         """Логирование предупреждений."""
         self._logger.warning(message, **kwargs)
     
-    def error(self, message: str, **kwargs: Any) -> None:
+    async def error(self, message: str, **kwargs: Any) -> None:
         """Логирование ошибок."""
         self._logger.error(message, **kwargs)
     
-    def critical(self, message: str, **kwargs: Any) -> None:
+    async def critical(self, message: str, **kwargs: Any) -> None:
         """Логирование критических ошибок."""
         self._logger.critical(message, **kwargs)
     
-    def exception(self, message: str, **kwargs: Any) -> None:
+    async def exception(self, message: str, **kwargs: Any) -> None:
         """Логирование исключений."""
         self._logger.exception(message, **kwargs)
 
@@ -52,7 +52,7 @@ def get_logger(name: str) -> Logger:
     return Logger(name)
 
 
-def log_user_action(
+async def log_user_action(
     logger: Logger,
     user_id: int,
     action: str,
@@ -61,7 +61,7 @@ def log_user_action(
     **kwargs: Any
 ) -> None:
     """Логирует действия пользователя."""
-    logger.info(
+    await logger.info(
         "Пользовательское действие",
         user_id=user_id,
         action=action,
@@ -71,7 +71,7 @@ def log_user_action(
     )
 
 
-def log_server_action(
+async def log_server_action(
     logger: Logger,
     action: str,
     result: Optional[str] = None,
@@ -79,7 +79,7 @@ def log_server_action(
     **kwargs: Any
 ) -> None:
     """Логирует действия сервера."""
-    logger.info(
+    await logger.info(
         "Серверное действие",
         action=action,
         result=result,
@@ -88,7 +88,7 @@ def log_server_action(
     )
 
 
-def log_error(
+async def log_error(
     logger: Logger,
     error: Exception,
     context: Optional[Dict[str, Any]] = None,
@@ -98,7 +98,7 @@ def log_error(
     log_context = context or {}
     log_context.update(kwargs)
     
-    logger.error(
+    await logger.error(
         str(error),
         error_type=type(error).__name__,
         error_message=str(error),
@@ -106,13 +106,13 @@ def log_error(
     )
 
 
-def log_warning(
+async def log_warning(
     logger: Logger,
     message: str,
     **kwargs: Any
 ) -> None:
     """Логирует предупреждения."""
-    logger.warning(
+    await logger.warning(
         message,
         **kwargs
     )

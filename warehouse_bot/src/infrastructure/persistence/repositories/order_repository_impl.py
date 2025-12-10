@@ -1,15 +1,11 @@
 from typing import List, Optional
-import logging
 
-from ....domain.entities.order import Order
 from ....domain.repositories.order_repository import OrderRepository
 from ....domain.value_objects.order_status import OrderStatus
 from ....infrastructure.integrations.crm_client import CRMClient
 from ....domain.entities.order import Order
 from ....domain.entities.order_item import OrderItem
 from ....domain.value_objects.money import Money
-from ....domain.value_objects.order_id import OrderId
-from ....domain.value_objects.warehouse_id import WarehouseId
 from ....infrastructure.logging import get_logger, log_server_action, log_error
 
 logger = get_logger(__name__)
@@ -41,7 +37,7 @@ class OrderRepositoryImpl(OrderRepository):
                     order_data = response["data"]
                     return self._map_order_from_crm(order_data)
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -71,7 +67,7 @@ class OrderRepositoryImpl(OrderRepository):
                         order_data = orders_data[0]
                         return self._map_order_from_crm(order_data)
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -110,7 +106,7 @@ class OrderRepositoryImpl(OrderRepository):
                             orders.append(self._map_order_from_crm(order_data))
                         return orders
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -143,7 +139,7 @@ class OrderRepositoryImpl(OrderRepository):
                             orders.append(self._map_order_from_crm(order_data))
                         return orders
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -158,7 +154,7 @@ class OrderRepositoryImpl(OrderRepository):
         """
         Сохраняет заказ.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_save",
             order_id=str(order.id)
@@ -199,7 +195,7 @@ class OrderRepositoryImpl(OrderRepository):
                     saved_data = response["data"]
                     result = self._map_order_from_crm(saved_data)
                     
-                    log_server_action(
+                    await log_server_action(
                         logger,
                         action="order_saved_successfully",
                         result="success",
@@ -208,7 +204,7 @@ class OrderRepositoryImpl(OrderRepository):
                     
                     return result
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -225,7 +221,7 @@ class OrderRepositoryImpl(OrderRepository):
         """
         Обновляет заказ.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_update",
             order_id=str(order.id)
@@ -266,7 +262,7 @@ class OrderRepositoryImpl(OrderRepository):
                     updated_data = response["data"]
                     result = self._map_order_from_crm(updated_data)
                     
-                    log_server_action(
+                    await log_server_action(
                         logger,
                         action="order_updated_successfully",
                         result="success",
@@ -275,7 +271,7 @@ class OrderRepositoryImpl(OrderRepository):
                     
                     return result
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -292,7 +288,7 @@ class OrderRepositoryImpl(OrderRepository):
         """
         Удаляет заказ.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_delete",
             order_id=order_id
@@ -306,7 +302,7 @@ class OrderRepositoryImpl(OrderRepository):
                     expected_status=200
                 )
                 
-                log_server_action(
+                await log_server_action(
                     logger,
                     action="order_deleted_successfully",
                     result="success",
@@ -315,7 +311,7 @@ class OrderRepositoryImpl(OrderRepository):
                 
                 return True
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -363,7 +359,7 @@ class OrderRepositoryImpl(OrderRepository):
                             orders.append(self._map_order_from_crm(order_data))
                         return orders
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={

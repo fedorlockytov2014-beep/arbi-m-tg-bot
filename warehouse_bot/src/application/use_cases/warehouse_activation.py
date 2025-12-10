@@ -1,11 +1,6 @@
-import logging
-from datetime import datetime
-from typing import Optional
-
 from ...application.dto.incoming_orders import ActivateWarehouseDTO
 from ...application.exceptions import (
     InvalidActivationCodeException,
-    MaxActivationAttemptsExceededException,
     WarehouseNotFoundException
 )
 from ...domain.repositories.warehouse_repository import WarehouseRepository
@@ -50,7 +45,7 @@ class ActivateWarehouseUseCase:
             InvalidActivationCodeException: Если код активации недействителен
             MaxActivationAttemptsExceededException: Если превышено количество попыток
         """
-        log_user_action(
+        await log_user_action(
             logger,
             user_id=data.chat_id,
             action="warehouse_activation_attempt",
@@ -61,7 +56,7 @@ class ActivateWarehouseUseCase:
         # Получение склада по UID
         warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
         if not warehouse:
-            log_error(
+            await log_error(
                 logger,
                 WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден"),
                 context={
@@ -73,7 +68,7 @@ class ActivateWarehouseUseCase:
         
         # Проверка, не активирован ли склад уже
         if warehouse.is_active and warehouse.telegram_chat_id is not None:
-            log_warning(
+            await log_warning(
                 logger,
                 "Склад уже активирован",
                 warehouse_uid=data.warehouse_uid,
@@ -82,7 +77,7 @@ class ActivateWarehouseUseCase:
             )
             # Если склад уже привязан к этому же чату - возвращаем успех
             if warehouse.telegram_chat_id == data.chat_id:
-                log_server_action(
+                await log_server_action(
                     logger,
                     action="warehouse_already_activated_same_chat",
                     result="success",
@@ -90,7 +85,7 @@ class ActivateWarehouseUseCase:
                 )
                 return True
             else:
-                log_error(
+                await log_error(
                     logger,
                     WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} уже привязан к другому чату"),
                     context={
@@ -103,7 +98,7 @@ class ActivateWarehouseUseCase:
 
         # Проверка кода активации
         if warehouse.activation_code != data.activation_code:
-            log_warning(
+            await log_warning(
                 logger,
                 "Неверный код активации",
                 warehouse_uid=data.warehouse_uid,
@@ -120,7 +115,7 @@ class ActivateWarehouseUseCase:
             # Сохраняем обновленный склад
             await self.warehouse_repository.update(warehouse)
             
-            log_user_action(
+            await log_user_action(
                 logger,
                 user_id=data.chat_id,
                 action="warehouse_activated_successfully",
@@ -131,7 +126,7 @@ class ActivateWarehouseUseCase:
             return True
             
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={

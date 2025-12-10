@@ -21,7 +21,17 @@ class Container(containers.DeclarativeContainer):
     
     # Сервисы
     order_service = Singleton(OrderService)
-    
+
+    # Интеграции
+    crm_client = Singleton(
+        CRMClient,
+        base_url=config.crm.base_url,
+        api_token=config.crm.api_token,
+        timeout=config.crm.timeout,
+        max_retries=config.crm.max_retries,
+        retry_delay=config.crm.retry_delay
+    )
+
     # Репозитории
     order_repository = Singleton(
         OrderRepositoryImpl,
@@ -35,15 +45,7 @@ class Container(containers.DeclarativeContainer):
     # Кеши
     stats_cache = Singleton(StatsCache)
     
-    # Интеграции
-    crm_client = Singleton(
-        CRMClient,
-        base_url=config.crm.base_url,
-        api_token=config.crm.api_token,
-        timeout=config.crm.timeout,
-        max_retries=config.crm.max_retries,
-        retry_delay=config.crm.retry_delay
-    )
+
     
     # Use cases
     accept_order_use_case = Factory(

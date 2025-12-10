@@ -1,11 +1,9 @@
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Union
+from datetime import datetime
 
 from ...application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO
 from ...application.exceptions import (
     OrderAlreadyAcceptedException,
-    OrderAlreadyCompletedException,
     OrderNotFoundException,
     WarehouseNotFoundException
 )

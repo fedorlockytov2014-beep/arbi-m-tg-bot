@@ -5,7 +5,7 @@
 # Уровень логирования приложения
 # Возможные значения: DEBUG, INFO, WARNING, ERROR, CRITICAL
 # По умолчанию: INFO
-log_level: "INFO"
+log_level: "DEBUG"
 
 # Формат логов
 # Возможные значения: JSON, CONSOLE
@@ -20,7 +20,7 @@ log_format: "JSON"
 telegram:
   # Токен бота от @BotFather
   # Обязательный параметр
-  bot_token: "YOUR_BOT_TOKEN_HERE"
+  bot_token: ""
   
   # Максимальное количество одновременных обновлений
   # Оптимизирует обработку сообщений при высокой нагрузке
@@ -98,10 +98,10 @@ cache:
 
 crm:
   # Базовый URL API CRM системы
-  base_url: "https://your-crm.com/api/v1 "
+  base_url: "https://api.biyk.ru/api/"
   
   # Токен авторизации для доступа к API CRM
-  api_token: "YOUR_CRM_API_TOKEN"
+  api_token: ""
   
   # Таймаут для запросов к API CRM (в секундах)
   timeout: 15

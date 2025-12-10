@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -66,7 +65,7 @@ class OrderService:
         """
         if order.status != OrderStatus.SENT_TO_PARTNER:
             error_msg = f"Заказ со статусом {order.status} не может быть принят партнёром"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -86,7 +85,7 @@ class OrderService:
             "accepted_at": accepted_at
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_accepted_by_partner",
             result="success",
@@ -119,7 +118,7 @@ class OrderService:
         """
         if order.status not in [OrderStatus.ACCEPTED_BY_PARTNER, OrderStatus.COOKING]:
             error_msg = f"Время приготовления можно установить только для заказов в статусе {OrderStatus.ACCEPTED_BY_PARTNER} или {OrderStatus.COOKING}"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -143,7 +142,7 @@ class OrderService:
             "expected_ready_at": expected_ready_at
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="cooking_time_set",
             result="success",
@@ -169,7 +168,7 @@ class OrderService:
         """
         if order.status != OrderStatus.COOKING:
             error_msg = f"Заказ со статусом {order.status} не может быть отмечен как готовый к доставке"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -185,7 +184,7 @@ class OrderService:
             "status": OrderStatus.READY_FOR_DELIVERY
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_marked_as_ready_for_delivery",
             result="success",
@@ -209,7 +208,7 @@ class OrderService:
         """
         if order.status != OrderStatus.READY_FOR_DELIVERY:
             error_msg = f"Курьера можно назначить только для заказов со статусом {OrderStatus.READY_FOR_DELIVERY}"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -226,7 +225,7 @@ class OrderService:
             "courier_assigned_at": datetime.utcnow()
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="courier_assigned_to_order",
             result="success",
@@ -250,7 +249,7 @@ class OrderService:
         """
         if order.status != OrderStatus.ON_DELIVERY:
             error_msg = f"Заказ можно отметить как доставленный только из статуса {OrderStatus.ON_DELIVERY}"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -267,7 +266,7 @@ class OrderService:
             "delivered_at": datetime.utcnow()
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_marked_as_delivered",
             result="success",
@@ -291,7 +290,7 @@ class OrderService:
         """
         if order.status in [OrderStatus.DELIVERED, OrderStatus.CANCELLED]:
             error_msg = f"Заказ со статусом {order.status} не может быть отменён"
-            log_error(
+            await log_error(
                 logger,
                 ValueError(error_msg),
                 context={
@@ -307,7 +306,7 @@ class OrderService:
             "status": OrderStatus.CANCELLED
         })
 
-        log_server_action(
+        await log_server_action(
             logger,
             action="order_cancelled",
             result="success",

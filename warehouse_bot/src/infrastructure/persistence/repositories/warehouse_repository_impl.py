@@ -1,7 +1,5 @@
 from typing import List, Optional
-import logging
 
-from ....domain.entities.warehouse import Warehouse
 from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ....infrastructure.logging import get_logger, log_server_action, log_error
 from ....infrastructure.integrations.crm_client import CRMClient
@@ -48,7 +46,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         activation_code=warehouse_data.get("activation_code")
                     )
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -63,7 +61,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Получает склад по UID.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="warehouse_get_by_uid",
             warehouse_uid=warehouse_uid
@@ -87,7 +85,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                             activation_code=warehouse_data.get("activation_code")
                         )
                         
-                        log_server_action(
+                        await log_server_action(
                             logger,
                             action="warehouse_found_by_uid",
                             result="success",
@@ -106,7 +104,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                             activation_code=warehouses_data.get("activation_code")
                         )
                         
-                        log_server_action(
+                        await log_server_action(
                             logger,
                             action="warehouse_found_by_uid",
                             result="success",
@@ -115,7 +113,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         
                         return warehouse
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -124,7 +122,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 }
             )
             
-            log_server_action(
+            await log_server_action(
                 logger,
                 action="warehouse_not_found_by_uid",
                 result="error",
@@ -159,7 +157,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                             activation_code=warehouse_data.get("activation_code")
                         )
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -199,7 +197,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     
                     return warehouses
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -213,7 +211,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Сохраняет склад.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="warehouse_save",
             warehouse_uid=warehouse.uid
@@ -249,7 +247,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         activation_code=saved_data.get("activation_code", warehouse.activation_code)
                     )
                     
-                    log_server_action(
+                    await log_server_action(
                         logger,
                         action="warehouse_saved_successfully",
                         result="success",
@@ -258,7 +256,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     
                     return result
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -274,7 +272,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Обновляет склад.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="warehouse_update",
             warehouse_uid=warehouse.uid,
@@ -311,7 +309,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         activation_code=updated_data.get("activation_code", warehouse.activation_code)
                     )
                     
-                    log_server_action(
+                    await log_server_action(
                         logger,
                         action="warehouse_updated_successfully",
                         result="success",
@@ -320,7 +318,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     
                     return result
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -337,7 +335,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         """
         Удаляет склад.
         """
-        log_server_action(
+        await log_server_action(
             logger,
             action="warehouse_delete",
             warehouse_id=warehouse_id
@@ -351,7 +349,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     expected_status=200
                 )
                 
-                log_server_action(
+                await log_server_action(
                     logger,
                     action="warehouse_deleted_successfully",
                     result="success",
@@ -360,7 +358,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 
                 return True
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
@@ -396,7 +394,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                             activation_code=warehouse_data.get("activation_code", activation_code)
                         )
         except Exception as e:
-            log_error(
+            await log_error(
                 logger,
                 e,
                 context={
