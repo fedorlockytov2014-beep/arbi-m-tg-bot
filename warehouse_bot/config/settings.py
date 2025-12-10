@@ -100,6 +100,7 @@ class Settings(BaseSettings):
     photo_storage: PhotoStorageSettings
     security: SecuritySettings
     statistics: StatisticsSettings
+    webhook: WebhookSettings = WebhookSettings()
 
 
     # telegram: TelegramSettings = TelegramSettings()
