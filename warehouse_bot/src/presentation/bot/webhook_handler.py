@@ -5,7 +5,7 @@ import hmac
 import json
 from typing import Dict, Any
 
-from ...config.settings import settings
+from warehouse_bot.config.settings import settings
 from ...application.dto.incoming_orders import CreateOrderDTO
 from ...domain.repositories.warehouse_repository import WarehouseRepository
 from ...infrastructure.integrations.crm_client import CRMClient
@@ -85,7 +85,7 @@ class WebhookHandler:
 
             # Отправляем сообщение в Telegram
             try:
-                from ...keyboards.inline_keyboards import get_order_actions_keyboard
+                from warehouse_bot.src.presentation.keyboards.inline_keyboards import get_order_actions_keyboard
                 await self.bot.send_message(
                     chat_id=warehouse.telegram_chat_id,
                     text=order_message,
