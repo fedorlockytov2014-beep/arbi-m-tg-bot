@@ -30,6 +30,50 @@ class OrderStatus(str, Enum):
         return self.value
 
     @classmethod
+    def from_value(cls, value: str) -> 'OrderStatus':
+        """
+        Создает OrderStatus из строкового значения.
+        
+        Args:
+            value: Строковое значение статуса
+            
+        Returns:
+            OrderStatus: Соответствующий enum-объект статуса
+        """
+        for status in cls:
+            if status.value == value:
+                return status
+        
+        # Если не найдено точное совпадение, пробуем найти по русским названиям
+        status_mapping = {
+            "new": cls.NEW,
+            "sent_to_partner": cls.SENT_TO_PARTNER,
+            "accepted_by_partner": cls.ACCEPTED_BY_PARTNER,
+            "cooking": cls.COOKING,
+            "ready_for_delivery": cls.READY_FOR_DELIVERY,
+            "on_delivery": cls.ON_DELIVERY,
+            "delivered": cls.DELIVERED,
+            "cancelled": cls.CANCELLED,
+            # Русские названия
+            "Новый": cls.NEW,
+            "Отправлен партнёру": cls.SENT_TO_PARTNER,
+            "Принят партнёром": cls.ACCEPTED_BY_PARTNER,
+            "Готовится": cls.COOKING,
+            "Готов к доставке": cls.READY_FOR_DELIVERY,
+            "На доставке": cls.ON_DELIVERY,
+            "Доставлен": cls.DELIVERED,
+            "Отменён": cls.CANCELLED,
+            # Альтернативные названия из ТЗ
+            "Ожидает сборки": cls.NEW,
+            "Ожидает подтверждения": cls.ACCEPTED_BY_PARTNER,
+            "Заказ подтвержден": cls.COOKING,
+            "Заказ доставляется": cls.READY_FOR_DELIVERY,
+            "Заказ завершен": cls.DELIVERED,
+        }
+        
+        return status_mapping.get(value, cls.NEW)
+
+    @classmethod
     def get_tracking_statuses(cls) -> list['OrderStatus']:
         """
         Возвращает статусы, которые отслеживаются в статистике.

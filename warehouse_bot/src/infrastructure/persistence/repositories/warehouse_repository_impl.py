@@ -40,7 +40,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 if "data" in response and response["data"]:
                     warehouse_data = response["data"]
                     return Warehouse(
-                        id=WarehouseId(warehouse_data.get("id", warehouse_id)),
+                        id=warehouse_data.get("id", warehouse_id),
                         uid=warehouse_data.get("uid", ""),
                         name=warehouse_data.get("name", ""),
                         address=warehouse_data.get("address", ""),
@@ -79,7 +79,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
                         warehouse_data = warehouses_data[0]
                         warehouse = Warehouse(
-                            id=WarehouseId(warehouse_data.get("id", warehouse_uid)),
+                            id=warehouse_data.get("id", warehouse_uid),
                             uid=warehouse_data.get("uid", warehouse_uid),
                             name=warehouse_data.get("name", ""),
                             address=warehouse_data.get("address", ""),
@@ -98,7 +98,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     elif isinstance(warehouses_data, dict):
                         # Если возвращается один объект, а не массив
                         warehouse = Warehouse(
-                            id=WarehouseId(warehouses_data.get("id", warehouse_uid)),
+                            id=warehouses_data.get("id", warehouse_uid),
                             uid=warehouses_data.get("uid", warehouse_uid),
                             name=warehouses_data.get("name", ""),
                             address=warehouses_data.get("address", ""),
@@ -151,7 +151,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
                         warehouse_data = warehouses_data[0]
                         return Warehouse(
-                            id=WarehouseId(warehouse_data.get("id", "")),
+                            id=warehouse_data.get("id", ""),
                             uid=warehouse_data.get("uid", ""),
                             name=warehouse_data.get("name", ""),
                             address=warehouse_data.get("address", ""),

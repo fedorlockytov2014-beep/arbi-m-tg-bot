@@ -7,22 +7,7 @@ from pydantic import BaseModel, Field
 from warehouse_bot.config.settings import settings
 from ..value_objects.order_status import OrderStatus
 from ..value_objects.money import Money
-
-
-class OrderItem(BaseModel):
-    """
-    Представляет элемент заказа (товар).
-    
-    Attributes:
-        id: Уникальный идентификатор элемента заказа
-        name: Название товара
-        quantity: Количество товара
-        price: Цена за единицу товара
-    """
-    id: UUID = Field(default_factory=uuid4)
-    name: str = Field(..., min_length=1, max_length=255)
-    quantity: int = Field(..., gt=0)
-    price: Money
+from .order_item import OrderItem
 
 
 class Order(BaseModel):
