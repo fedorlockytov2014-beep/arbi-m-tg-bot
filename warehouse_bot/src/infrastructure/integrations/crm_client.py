@@ -202,6 +202,104 @@ class CRMClient:
                 
         # Этот код не должен быть достигнут, но добавлен для безопасности
         raise IntegrationError(f"Необработанная ошибка при запросе к CRM API: {last_error}")
+
+    async def get_warehouse_by_uid(self, warehouse_uid: str) -> Dict[str, Any]:
+        """
+        Получает информацию о складе по UID из CRM.
+        
+        Args:
+            warehouse_uid: UID склада
+            
+        Returns:
+            Dict[str, Any]: Информация о складе
+        """
+        params = {
+            "filters[uid][$eq]": warehouse_uid
+        }
+        
+        return await self._make_request(
+            method="GET",
+            endpoint="/warehouses",
+            params=params,
+            expected_status=200
+        )
+
+    async def update_order_status(self, order_id: str, status: str, cooking_time_minutes: Optional[int] = None, photos: Optional[list] = None) -> Dict[str, Any]:
+        """
+        Обновляет статус заказа в CRM.
+        
+        Args:
+            order_id: ID заказа
+            status: Новый статус заказа
+            cooking_time_minutes: Время приготовления в минутах (опционально)
+            photos: Фотографии заказа (опционально)
+            
+        Returns:
+            Dict[str, Any]: Ответ CRM системы
+        """
+        data: Dict[str, Any] = {
+            "data": {
+                "status": status
+            }
+        }
+        
+        if cooking_time_minutes is not None:
+            data["data"]["cooking_time_minutes"] = cooking_time_minutes
+            
+        if photos is not None:
+            data["data"]["photos"] = photos
+            
+        return await self._make_request(
+            method="PUT",
+            endpoint=f"/orders/{order_id}",
+            data=data
+        )
+
+    async def get_order_details(self, order_id: str) -> Dict[str, Any]:
+        """
+        Получает детали заказа из CRM.
+        
+        Args:
+            order_id: ID заказа
+            
+        Returns:
+            Dict[str, Any]: Детали заказа
+        """
+        return await self._make_request(
+            method="GET",
+            endpoint=f"/orders/{order_id}",
+            expected_status=200
+        )
+
+    async def get_sales_statistics(self, warehouse_id: str, date_from: str, date_to: str, statuses: list) -> Dict[str, Any]:
+        """
+        Получает статистику продаж из CRM для указанного периода.
+        
+        Args:
+            warehouse_id: ID склада
+            date_from: Начальная дата в формате ISO 8601
+            date_to: Конечная дата в формате ISO 8601
+            statuses: Список статусов для фильтрации
+            
+        Returns:
+            Dict[str, Any]: Статистика продаж
+        """
+        # Формируем параметры для фильтрации
+        params = {
+            "filters[warehouse][id][$eq]": warehouse_id,
+            "filters[createdAt][$gte]": date_from,
+            "filters[createdAt][$lte]": date_to,
+        }
+        
+        # Добавляем фильтр по статусам
+        for i, status in enumerate(statuses):
+            params[f"filters[status][$in][{i}]"] = status
+        
+        return await self._make_request(
+            method="GET",
+            endpoint="/orders",
+            params=params
+        )
         
     async def send_new_order(self, order: Order) -> Dict[str, Any]:
         """

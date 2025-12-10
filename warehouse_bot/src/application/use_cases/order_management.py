@@ -27,11 +27,13 @@ class AcceptOrderUseCase:
     - Проверку, что заказ еще не принят другим партнером
     - Обновление статуса заказа
     - Сохранение времени принятия заказа
+    - Интеграцию с CRM системой
     
     Атрибуты:
         order_repository: Репозиторий для работы с заказами
         warehouse_repository: Репозиторий для работы со складами
         order_service: Сервис для бизнес-логики заказов
+        crm_client: Клиент для интеграции с CRM
     """
     
     def __init__(
@@ -39,6 +41,7 @@ class AcceptOrderUseCase:
         order_repository: OrderRepository,
         warehouse_repository: WarehouseRepository,
         order_service: OrderService,
+        crm_client,
     ):
         """
         Инициализирует use case.
@@ -47,10 +50,12 @@ class AcceptOrderUseCase:
             order_repository: Репозиторий для работы с заказами
             warehouse_repository: Репозиторий для работы со складами
             order_service: Сервис для бизнес-логики заказов
+            crm_client: Клиент для интеграции с CRM
         """
         self.order_repository = order_repository
         self.warehouse_repository = warehouse_repository
         self.order_service = order_service
+        self.crm_client = crm_client
         
     async def execute(self, data: AcceptOrderDTO) -> Order:
         """
@@ -157,6 +162,32 @@ class AcceptOrderUseCase:
             # Сохраняем обновленный заказ
             result = await self.order_repository.update(updated_order)
             
+            # Интеграция с CRM: обновляем статус заказа в CRM системе
+            try:
+                async with self.crm_client as crm:
+                    await crm.update_order_status(
+                        order_id=data.order_id,
+                        status="Ожидает подтверждения"  # Это соответствует accepted_by_partner
+                    )
+                    
+                logger.info(
+                    "Статус заказа успешно обновлен в CRM системе",
+                    extra={
+                        "order_id": result.id,
+                        "new_status": "Ожидает подтверждения"
+                    }
+                )
+            except Exception as e:
+                logger.error(
+                    "Ошибка при обновлении статуса заказа в CRM системе",
+                    extra={
+                        "order_id": result.id,
+                        "error": str(e),
+                        "exc_info": True
+                    }
+                )
+                # Не прерываем выполнение, так как локальное обновление прошло успешно
+                
             logger.info(
                 "Заказ успешно принят",
                 extra={
@@ -189,6 +220,7 @@ class SetCookingTimeUseCase:
     - Проверку прав доступа к заказу
     - Установку времени приготовления
     - Обновление статуса заказа на "COOKING"
+    - Интеграцию с CRM системой
     """
     
     def __init__(
@@ -196,6 +228,7 @@ class SetCookingTimeUseCase:
         order_repository: OrderRepository,
         warehouse_repository: WarehouseRepository,
         order_service: OrderService,
+        crm_client,
     ):
         """
         Инициализирует use case.
@@ -204,10 +237,12 @@ class SetCookingTimeUseCase:
             order_repository: Репозиторий для работы с заказами
             warehouse_repository: Репозиторий для работы со складами
             order_service: Сервис для бизнес-логики заказов
+            crm_client: Клиент для интеграции с CRM
         """
         self.order_repository = order_repository
         self.warehouse_repository = warehouse_repository
         self.order_service = order_service
+        self.crm_client = crm_client
         
     async def execute(self, data: SetCookingTimeDTO) -> Order:
         """
@@ -307,6 +342,34 @@ class SetCookingTimeUseCase:
             
             # Сохраняем обновленный заказ
             result = await self.order_repository.update(updated_order)
+            
+            # Интеграция с CRM: обновляем статус и время приготовления в CRM системе
+            try:
+                async with self.crm_client as crm:
+                    await crm.update_order_status(
+                        order_id=data.order_id,
+                        status="Заказ подтвержден",  # Это соответствует cooking
+                        cooking_time_minutes=data.cooking_time_minutes
+                    )
+                    
+                logger.info(
+                    "Статус заказа и время приготовления успешно обновлены в CRM системе",
+                    extra={
+                        "order_id": result.id,
+                        "new_status": "Заказ подтвержден",
+                        "cooking_time_minutes": data.cooking_time_minutes
+                    }
+                )
+            except Exception as e:
+                logger.error(
+                    "Ошибка при обновлении статуса заказа в CRM системе",
+                    extra={
+                        "order_id": result.id,
+                        "error": str(e),
+                        "exc_info": True
+                    }
+                )
+                # Не прерываем выполнение, так как локальное обновление прошло успешно
             
             logger.info(
                 "Время приготовления успешно установлено",
