@@ -4,6 +4,8 @@ from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
 from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....domain.repositories.order_repository import OrderRepository
+from ....domain.value_objects.order_status import OrderStatus
 from ...formatters.order_formatter import format_order_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
 from ....infrastructure.logging import get_logger, log_user_action, log_server_action, log_error
@@ -49,7 +51,8 @@ async def help_command(message: Message):
 @inject
 async def orders_command(
     message: Message,
-    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"],
+    order_repository: OrderRepository = Provide["order_repository"]
 ):
     """
     Обработчик команды /orders.
@@ -79,10 +82,24 @@ async def orders_command(
             )
             return
         
-        # В реальном приложении здесь нужно получить новые заказы для склада
-        # Пока покажем заглушку
-        response_text = "Новых заказов пока нет. Как только они поступят, они появятся здесь."
-        await message.reply(response_text)
+        # Получаем новые заказы для склада (с определенными статусами)
+        # В соответствии с ТЗ, показываем заказы с определенными статусами
+        new_orders = await order_repository.get_by_warehouse_and_status(
+            warehouse_id=str(warehouse.id),
+            status=OrderStatus.NEW  # или другие статусы для новых заказов
+        )
+        
+        if not new_orders:
+            response_text = "Новых заказов пока нет. Как только они поступят, они появятся здесь."
+            await message.reply(response_text)
+        else:
+            # Отправляем информацию о каждом заказе
+            for order in new_orders:
+                order_message = format_order_message(order)
+                await message.reply(
+                    order_message,
+                    reply_markup=get_order_actions_keyboard(order.id)
+                )
         
         log_server_action(
             logger,
@@ -90,7 +107,8 @@ async def orders_command(
             result="success",
             user_id=message.from_user.id,
             chat_id=message.chat.id,
-            warehouse_uid=warehouse.uid
+            warehouse_uid=warehouse.uid,
+            orders_count=len(new_orders)
         )
         
     except Exception as e:
