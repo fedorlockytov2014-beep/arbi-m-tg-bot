@@ -5,7 +5,7 @@ from ..entities.order import Order
 from ..value_objects.order_status import OrderStatus
 
 
-class OrderRepository(ABC):
+class IOrderRepository(ABC):
     """
     Абстрактный репозиторий для работы с заказами.
     """
@@ -21,7 +21,7 @@ class OrderRepository(ABC):
         Returns:
             Order: Заказ или None если не найден
         """
-        pass
+        ...
 
     @abstractmethod
     async def get_by_number(self, order_number: str) -> Optional[Order]:
@@ -34,7 +34,7 @@ class OrderRepository(ABC):
         Returns:
             Order: Заказ или None если не найден
         """
-        pass
+        ...
 
     @abstractmethod
     async def get_by_warehouse_and_status(
@@ -52,7 +52,7 @@ class OrderRepository(ABC):
         Returns:
             List[Order]: Список заказов
         """
-        pass
+        ...
 
     @abstractmethod
     async def get_all_by_warehouse(self, warehouse_id: str) -> List[Order]:
@@ -65,7 +65,7 @@ class OrderRepository(ABC):
         Returns:
             List[Order]: Список заказов
         """
-        pass
+        ...
 
     @abstractmethod
     async def save(self, order: Order) -> Order:
@@ -78,7 +78,7 @@ class OrderRepository(ABC):
         Returns:
             Order: Сохранённый заказ
         """
-        pass
+        ...
 
     @abstractmethod
     async def update(self, order: Order) -> Order:
@@ -91,7 +91,7 @@ class OrderRepository(ABC):
         Returns:
             Order: Обновлённый заказ
         """
-        pass
+        ...
 
     @abstractmethod
     async def delete(self, order_id: str) -> bool:
@@ -104,7 +104,7 @@ class OrderRepository(ABC):
         Returns:
             bool: True если заказ был удалён, иначе False
         """
-        pass
+        ...
 
     @abstractmethod
     async def get_orders_by_status_for_period(
@@ -126,4 +126,4 @@ class OrderRepository(ABC):
         Returns:
             List[Order]: Список заказов
         """
-        pass
+        ...

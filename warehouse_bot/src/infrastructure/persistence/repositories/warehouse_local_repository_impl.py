@@ -1,10 +1,10 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import create_engine, select, update, delete, and_, or_
+from sqlalchemy import create_engine, select, update, delete, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
-from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....domain.repositories.warehouse_db_repository import IWarehouseDBRepository
 from ....domain.entities.warehouse import Warehouse
 from ...logging import get_logger
 from ..models import WarehouseModel
@@ -12,7 +12,7 @@ from ..models import WarehouseModel
 logger = get_logger(__name__)
 
 
-class WarehouseLocalRepositoryImpl(WarehouseRepository):
+class WarehouseLocalRepositoryImpl(IWarehouseDBRepository):
     """
     Локальная реализация репозитория складов с использованием SQLite.
     """
@@ -73,9 +73,9 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 if model:
                     return self._map_to_entity(model)
         except SQLAlchemyError as e:
-            logger.error(f"Database error while getting warehouse by ID {warehouse_id}: {e}")
+            await logger.error(f"Database error while getting warehouse by ID {warehouse_id}: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error while getting warehouse by ID {warehouse_id}: {e}")
+            await logger.error(f"Unexpected error while getting warehouse by ID {warehouse_id}: {e}")
         
         return None
 
@@ -92,9 +92,9 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 if model:
                     return self._map_to_entity(model)
         except SQLAlchemyError as e:
-            logger.error(f"Database error while getting warehouse by chat ID {chat_id}: {e}")
+            await logger.error(f"Database error while getting warehouse by chat ID {chat_id}: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error while getting warehouse by chat ID {chat_id}: {e}")
+            await logger.error(f"Unexpected error while getting warehouse by chat ID {chat_id}: {e}")
         
         return None
 
@@ -110,9 +110,9 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 
                 return [self._map_to_entity(model) for model in models]
         except SQLAlchemyError as e:
-            logger.error(f"Database error while getting all warehouses: {e}")
+            await logger.error(f"Database error while getting all warehouses: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error while getting all warehouses: {e}")
+            await logger.error(f"Unexpected error while getting all warehouses: {e}")
         
         return []
 
@@ -129,10 +129,10 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 
                 return self._map_to_entity(model)
         except SQLAlchemyError as e:
-            logger.error(f"Database error while saving warehouse {warehouse.id}: {e}")
+            await logger.error(f"Database error while saving warehouse {warehouse.id}: {e}")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error while saving warehouse {warehouse.id}: {e}")
+            await logger.error(f"Unexpected error while saving warehouse {warehouse.id}: {e}")
             raise
 
     async def update(self, warehouse: Warehouse) -> Warehouse:
@@ -166,10 +166,10 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 
                 return self._map_to_entity(updated_model)
         except SQLAlchemyError as e:
-            logger.error(f"Database error while updating warehouse {warehouse.id}: {e}")
+            await logger.error(f"Database error while updating warehouse {warehouse.id}: {e}")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error while updating warehouse {warehouse.id}: {e}")
+            await logger.error(f"Unexpected error while updating warehouse {warehouse.id}: {e}")
             raise
 
     async def delete(self, warehouse_id: str) -> bool:
@@ -184,9 +184,9 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 
                 return result.rowcount > 0
         except SQLAlchemyError as e:
-            logger.error(f"Database error while deleting warehouse {warehouse_id}: {e}")
+            await logger.error(f"Database error while deleting warehouse {warehouse_id}: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error while deleting warehouse {warehouse_id}: {e}")
+            await logger.error(f"Unexpected error while deleting warehouse {warehouse_id}: {e}")
         
         return False
 
@@ -208,9 +208,9 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 if model:
                     return self._map_to_entity(model)
         except SQLAlchemyError as e:
-            logger.error(f"Database error while finding warehouse by activation code {activation_code}: {e}")
+            await logger.error(f"Database error while finding warehouse by activation code {activation_code}: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error while finding warehouse by activation code {activation_code}: {e}")
+            await logger.error(f"Unexpected error while finding warehouse by activation code {activation_code}: {e}")
         
         return None
 
@@ -226,7 +226,7 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 model = result.scalar_one_or_none()
                 
                 if not model:
-                    logger.info(f"No warehouse found with chat ID {chat_id} to deactivate")
+                    await logger.info(f"No warehouse found with chat ID {chat_id} to deactivate")
                     return False
                 
                 # Обновляем поля для деактивации
@@ -242,11 +242,11 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
                 session.execute(update_stmt)
                 session.commit()
                 
-                logger.info(f"Warehouse {model.id} deactivated successfully")
+                await logger.info(f"Warehouse {model.id} deactivated successfully")
                 return True
         except SQLAlchemyError as e:
-            logger.error(f"Database error while deactivating warehouse by chat ID {chat_id}: {e}")
+            await logger.error(f"Database error while deactivating warehouse by chat ID {chat_id}: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error while deactivating warehouse by chat ID {chat_id}: {e}")
+            await logger.error(f"Unexpected error while deactivating warehouse by chat ID {chat_id}: {e}")
             return False

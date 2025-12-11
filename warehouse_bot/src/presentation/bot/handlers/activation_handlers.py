@@ -5,8 +5,8 @@ from dependency_injector.wiring import Provide, inject
 
 from ....application.dto.incoming_orders import ActivateWarehouseDTO
 from ....application.use_cases.warehouse_activation import ActivateWarehouseUseCase
-from ....domain.repositories.warehouse_repository import WarehouseRepository
-from ...keyboards.inline_keyboards import get_order_actions_keyboard
+from ....domain.repositories.warehouse_db_repository import IWarehouseDBRepository
+from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ..states import WarehouseActivation
 from ....infrastructure.di.container import Container
 
@@ -15,7 +15,8 @@ from ....infrastructure.di.container import Container
 async def start_command(
     message: Message,
     activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
-    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+    warehouse_repository: IWarehouseRepository = Provide[Container.warehouse_repository],
+    warehouse_db_repository: IWarehouseDBRepository = Provide[Container.warehouse_db_repository]
 ):
     """
     Обработчик команды /start.
@@ -52,7 +53,7 @@ async def start_command(
             return
     
     # Если нет deep-link, проверяем, привязан ли уже чат к складу
-    warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
+    warehouse = await warehouse_db_repository.get_by_telegram_chat_id(message.chat.id)
     
     if warehouse:
         await message.reply(
@@ -82,7 +83,7 @@ async def process_activation_code(
     message: Message, 
     state: FSMContext,
     activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
-    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+    warehouse_repository: IWarehouseRepository = Provide[Container.warehouse_repository]
 ):
     """
     Обработчик ввода кода активации.
@@ -120,7 +121,7 @@ async def process_activation_code(
 async def activate_warehouse_by_code_command(
     message: Message,
     activate_warehouse_use_case: ActivateWarehouseUseCase = Provide[Container.activate_warehouse_use_case],
-    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+    warehouse_repository: IWarehouseRepository = Provide[Container.warehouse_repository]
 ):
     """
     Обработчик команды активации склада по коду.
@@ -162,7 +163,7 @@ async def activate_warehouse_by_code_command(
 @inject
 async def deactivate_command(
     message: Message,
-    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+    warehouse_repository: IWarehouseRepository = Provide[Container.warehouse_repository]
 ):
     """
     Обработчик команды /deactivate для отвязки склада от чата.

@@ -7,7 +7,8 @@ from ...application.dto.statistics import (
     WeeklyStatisticsDTO
 )
 from ...application.exceptions import StatisticsCalculationError, WarehouseNotFoundException
-from ...domain.repositories.warehouse_repository import WarehouseRepository
+from ...domain.repositories.warehouse_db_repository import IWarehouseDBRepository
+from ...domain.repositories.warehouse_repository import IWarehouseRepository
 from ...infrastructure.cache.stats_cache import StatsCache
 from ...infrastructure.logging import get_logger
 
@@ -30,7 +31,8 @@ class GetTodayStatisticsUseCase:
     
     def __init__(
         self,
-        warehouse_repository: WarehouseRepository,
+        warehouse_repository: IWarehouseRepository,
+        warehouse_db_repository: IWarehouseDBRepository,
         stats_cache: StatsCache,
     ):
         """
@@ -41,6 +43,7 @@ class GetTodayStatisticsUseCase:
             stats_cache: Сервис кеширования статистики
         """
         self.warehouse_repository = warehouse_repository
+        self.warehouse_db_repository = warehouse_db_repository
         self.stats_cache = stats_cache
         
     async def execute(self, data: TodayStatisticsDTO) -> Dict[str, Union[int, float, str]]:
@@ -64,20 +67,28 @@ class GetTodayStatisticsUseCase:
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
-        if not warehouse:
+        crm_warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
+        if not crm_warehouse:
             await logger.error(
                 "Склад не найден при запросе статистики",
                 warehouse_id=data.warehouse_id
             )
             raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
-            
-        if warehouse.telegram_chat_id != data.chat_id:
+
+        db_warehouse = await self.warehouse_db_repository.get_by_id(data.warehouse_id)
+        if not db_warehouse:
+            await logger.error(
+                "Склад не найден при запросе статистики",
+                warehouse_id=data.warehouse_id
+            )
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
+
+        if db_warehouse.telegram_chat_id != data.chat_id:
             await logger.error(
                 "Попытка получить статистику для чужого склада",
                 warehouse_id=data.warehouse_id,
                 chat_id=data.chat_id,
-                warehouse_chat_id=warehouse.telegram_chat_id
+                warehouse_chat_id=db_warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
                 f"Склад с ID {data.warehouse_id} не привязан к данному чату"
@@ -164,7 +175,7 @@ class GetWeeklyStatisticsUseCase:
     
     def __init__(
         self,
-        warehouse_repository: WarehouseRepository,
+        warehouse_repository: IWarehouseRepository,
         stats_cache: StatsCache,
     ):
         """
@@ -283,7 +294,7 @@ class GetMonthlyStatisticsUseCase:
     
     def __init__(
         self,
-        warehouse_repository: WarehouseRepository,
+        warehouse_repository: IWarehouseRepository,
         stats_cache: StatsCache,
     ):
         """

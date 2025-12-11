@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from warehouse_bot.config.settings import settings
 from ...application.dto.incoming_orders import CreateOrderDTO
-from ...domain.repositories.warehouse_repository import WarehouseRepository
+from ...domain.repositories.warehouse_repository import IWarehouseRepository
 from ...infrastructure.integrations.crm_client import CRMClient
 from aiogram import Bot
 
@@ -19,7 +19,7 @@ class WebhookHandler:
 
     def __init__(
         self,
-        warehouse_repository: WarehouseRepository,
+        warehouse_repository: IWarehouseRepository,
         crm_client: CRMClient,
         bot: Bot,
         secret_key: str = settings.webhook.secret_key

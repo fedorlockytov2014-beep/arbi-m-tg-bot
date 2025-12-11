@@ -5,7 +5,7 @@ from dependency_injector.wiring import Provide, inject
 
 from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, AddOrderPhotoDTO
 from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase
-from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ...formatters.order_formatter import format_order_message, format_order_status_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cooking_time_keyboard, get_ready_for_delivery_keyboard, get_confirm_ready_keyboard
 from ..states import OrderProcessing
@@ -15,7 +15,7 @@ from ..states import OrderProcessing
 async def handle_new_order_callback(
     callback: CallbackQuery,
     accept_order_use_case: AcceptOrderUseCase = Provide["accept_order_use_case"],
-    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"]
 ):
     """
     Обработчик нажатия кнопки 'Взять заказ'.
@@ -150,7 +150,7 @@ async def handle_cooking_time_message(
     message: Message,
     state: FSMContext,
     set_cooking_time_use_case: SetCookingTimeUseCase = Provide["set_cooking_time_use_case"],
-    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"]
+    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"]
 ):
     """
     Обработчик ввода времени готовки вручную.

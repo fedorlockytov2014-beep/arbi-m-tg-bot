@@ -13,19 +13,21 @@ def format_order_message(order: Order) -> str:
         str: Отформатированное сообщение о заказе
     """
     items_text = "\n".join([
-        f" • {item.name} ×{item.quantity} — {item.price.amount} ₽"
+        f" • {item.name} ×{item.count} — {item.price.amount} ₽"
         for item in order.items
     ])
-    
+
     message = (
-        f"🆕 Новый заказ №{order.order_number}\n"
-        f" Клиент: {order.customer_name}\n"
-        f" Телефон: {order.customer_phone}\n"
-        f" Адрес: {order.delivery_address}\n"
-        f" Комментарий: {order.comment or 'Нет'}\n"
-        f"\nСостав:\n{items_text}\n"
-        f"\nИтог: {order.total_amount.amount} ₽\n"
-        f" Время создания: {order.created_at.strftime('%H:%M') if order.created_at else 'N/A'}"
+        "🛒 <b>Новый заказ!</b>\n\n"
+        f"🆔 <b>Заказ №{order.id}</b>\n"
+        f"🧑‍💼 <b>Клиент:</b> {order.customer_name or "<i>нет</i>"}\n" 
+        f"📞 <b>Телефон:</b> {order.customer_phone or "<i>нет</i>"}\n\n"
+        f"🏠 <b>Адрес:</b> {order.delivery_address or "<i>нет</i>"}\n\n"
+        f"📝 <b>Комментарий:</b> {order.comment or '<i>нет</i>'}\n\n"
+        f"📋 <b>Состав заказа:</b>\n{items_text}\n\n"
+        f"🚚 <b>Стоимость доставки:</b> {order.delivery_price} ₽\n\n"
+        f"💰 <b>Итого:</b> {order.total_amount.amount} ₽\n"
+        f"🕒 <b>Время создания:</b> {order.created_at.strftime('%H:%M') if order.created_at else '<i>не указано</i>'}"
     )
     
     return message

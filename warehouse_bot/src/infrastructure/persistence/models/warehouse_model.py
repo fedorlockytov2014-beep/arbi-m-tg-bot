@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -14,7 +14,7 @@ class WarehouseModel(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     address = Column(String, nullable=False)
-    telegram_chat_id = Column(Integer, nullable=True)  # Nullable since not all warehouses are attached to chats
+    telegram_chat_id = Column(Integer, nullable=True)
     activated_at = Column(DateTime, nullable=True)
     deactivated_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=False)

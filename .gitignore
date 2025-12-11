@@ -39,3 +39,4 @@ htmlcov/
 build/
 dist/
 ```
+/warehouse_bot/config/config.yaml

@@ -10,7 +10,7 @@ class Money(BaseModel):
     Attributes:
         amount: Сумма в минимальных единицах (копейках/центах)
     """
-    amount: int = Field(..., ge=0)
+    amount: Decimal = Field(..., ge=0)
 
     @field_validator('amount')
     @classmethod

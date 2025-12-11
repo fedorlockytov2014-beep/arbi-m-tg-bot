@@ -3,8 +3,8 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
-from ....domain.repositories.warehouse_repository import WarehouseRepository
-from ....domain.repositories.order_repository import OrderRepository
+from ....domain.repositories.warehouse_repository import IWarehouseRepository
+from ....domain.repositories.order_repository import IOrderRepository
 from ....domain.value_objects.order_status import OrderStatus
 from ...formatters.order_formatter import format_order_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard
@@ -51,8 +51,8 @@ async def help_command(message: Message):
 @inject
 async def orders_command(
     message: Message,
-    warehouse_repository: WarehouseRepository = Provide["warehouse_repository"],
-    order_repository: OrderRepository = Provide["order_repository"]
+    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"],
+    order_repository: IOrderRepository = Provide["order_repository"]
 ):
     """
     Обработчик команды /orders.
@@ -86,7 +86,7 @@ async def orders_command(
         # В соответствии с ТЗ, показываем заказы с определенными статусами
         new_orders = await order_repository.get_by_warehouse_and_status(
             warehouse_id=str(warehouse.id),
-            status=OrderStatus.NEW  # или другие статусы для новых заказов
+            status=OrderStatus.WAIT_FOR_ASSEMBLY
         )
         
         if not new_orders:
@@ -98,7 +98,8 @@ async def orders_command(
                 order_message = format_order_message(order)
                 await message.reply(
                     order_message,
-                    reply_markup=get_order_actions_keyboard(order.id)
+                    reply_markup=get_order_actions_keyboard(order.id),
+                    parse_mode="HTML"
                 )
         
         await log_server_action(

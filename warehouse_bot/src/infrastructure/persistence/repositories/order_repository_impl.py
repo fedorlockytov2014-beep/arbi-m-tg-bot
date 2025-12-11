@@ -1,6 +1,7 @@
+import datetime
 from typing import List, Optional
 
-from ....domain.repositories.order_repository import OrderRepository
+from ....domain.repositories.order_repository import IOrderRepository
 from ....domain.value_objects.order_status import OrderStatus
 from ....infrastructure.integrations.crm_client import CRMClient
 from ....domain.entities.order import Order
@@ -11,7 +12,7 @@ from ....infrastructure.logging import get_logger, log_server_action, log_error
 logger = get_logger(__name__)
 
 
-class OrderRepositoryImpl(OrderRepository):
+class OrderRepositoryImpl(IOrderRepository):
     """
     Реализация репозитория заказов с использованием CRM API.
     """
@@ -97,13 +98,12 @@ class OrderRepositoryImpl(OrderRepository):
                     },
                     expected_status=200
                 )
-                
                 if "data" in response and response["data"]:
                     orders_data = response["data"]
                     if isinstance(orders_data, list):
                         orders = []
-                        for order_data in orders_data:
-                            orders.append(self._map_order_from_crm(order_data))
+                        for el in orders_data:
+                            orders.append(self._map_order_from_crm(el))
                         return orders
         except Exception as e:
             await log_error(
@@ -385,30 +385,38 @@ class OrderRepositoryImpl(OrderRepository):
         """
         # Преобразуем items
         items = []
-        if "items" in order_data:
-            for item_data in order_data["items"]:
+        check: dict = order_data.get("check", {})
+        if check:
+            for item_data in check["composition"]:
                 item = OrderItem(
                     name=item_data.get("name", ""),
-                    quantity=item_data.get("quantity", 1),
-                    price=Money(item_data.get("price", 0.0))
+                    count=item_data.get("count", 1),
+                    price=Money(amount=item_data.get("price", 0.0))
                 )
                 items.append(item)
         
         # Преобразуем статус
         status_value = order_data.get("status", "new")
         status = OrderStatus.from_value(status_value)
-        
+
+        customer: dict = order_data.get("buyer", {})
+        user_customer: dict = order_data.get("user", {})
+        warehouse: dict = order_data.get("warehouse", {})
+
+
         return Order(
-            id=order_data.get("id", ""),
-            order_number=order_data.get("order_number", ""),
-            warehouse_id=order_data.get("warehouse_id", ""),
-            customer_name=order_data.get("customer_name", ""),
-            customer_phone=order_data.get("customer_phone", ""),
-            delivery_address=order_data.get("delivery_address", ""),
+            id=order_data.get("id", 0),
+            warehouse_address=warehouse.get("address", ""),
+            customer_phone=customer.get("contactInfo", ""),
+            customer_name=user_customer.get("personalName", ""),
+            delivery_address=customer.get("address", ""),
+            delivery_price=check.get("deliveryCost", 0.0),
             status=status,
             items=items,
-            total_amount=Money(order_data.get("total_amount", 0.0)),
-            comment=order_data.get("comment", ""),
-            payment_type=order_data.get("payment_type", "cash"),
-            created_at=order_data.get("created_at")
+            total_amount=Money(amount=check.get("finalPrice", 0.0)),
+            comment=customer.get("comment", ""),
+            payment_type=customer.get("payment", ""),
+            payment_info=customer.get("paymentInfo", ""),
+            created_at=order_data.get("createdAt", datetime.datetime.now()),
+            what_to_do=customer.get("")
         )

@@ -8,7 +8,7 @@ from ...domain.services.order_service import OrderService
 from ...infrastructure.cache.stats_cache import StatsCache
 from ...infrastructure.integrations.crm_client import CRMClient
 from ...infrastructure.persistence.repositories.order_repository_impl import OrderRepositoryImpl
-from ...infrastructure.persistence.repositories.warehouse_repository_impl import WarehouseRepositoryImpl
+from ...infrastructure.persistence.repositories.warehouse_crm_repository_impl import WarehouseCrmRepositoryImpl
 from ...infrastructure.persistence.repositories.warehouse_local_repository_impl import WarehouseLocalRepositoryImpl
 
 
@@ -39,8 +39,12 @@ class Container(containers.DeclarativeContainer):
         crm_client=crm_client
     )
     warehouse_repository = Singleton(
+        WarehouseCrmRepositoryImpl,
+        crm_client=crm_client
+    )
+    warehouse_db_repository = Singleton(
         WarehouseLocalRepositoryImpl,
-        db_path="sqlite:///./warehouse_local.db"  # Use local SQLite database
+        db_path="sqlite:///./warehouse_local.db"
     )
     
     # Кеши
@@ -68,12 +72,14 @@ class Container(containers.DeclarativeContainer):
     activate_warehouse_use_case = Factory(
         ActivateWarehouseUseCase,
         warehouse_repository=warehouse_repository,
+        warehouse_db_repository=warehouse_db_repository,
         crm_client=crm_client
     )
     
     get_today_statistics_use_case = Factory(
         GetTodayStatisticsUseCase,
         warehouse_repository=warehouse_repository,
+        warehouse_db_repository=warehouse_db_repository,
         stats_cache=stats_cache
     )
     

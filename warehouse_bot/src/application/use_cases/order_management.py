@@ -7,8 +7,8 @@ from ...application.exceptions import (
     WarehouseNotFoundException
 )
 from ...domain.entities.order import Order
-from ...domain.repositories.order_repository import OrderRepository
-from ...domain.repositories.warehouse_repository import WarehouseRepository
+from ...domain.repositories.order_repository import IOrderRepository
+from ...domain.repositories.warehouse_repository import IWarehouseRepository
 from ...domain.services.order_service import OrderService
 from ...domain.value_objects.cooking_time import CookingTime
 from ...domain.value_objects.order_status import OrderStatus
@@ -36,8 +36,8 @@ class AcceptOrderUseCase:
     
     def __init__(
         self,
-        order_repository: OrderRepository,
-        warehouse_repository: WarehouseRepository,
+        order_repository: IOrderRepository,
+        warehouse_repository: IWarehouseRepository,
         order_service: OrderService,
         crm_client,
     ):
@@ -88,6 +88,8 @@ class AcceptOrderUseCase:
             raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
+            print(warehouse.telegram_chat_id)
+            print(data.chat_id)
             await logger.error(
                 "Попытка принять заказ для чужого склада",
                 warehouse_id=data.warehouse_id,
@@ -199,8 +201,8 @@ class SetCookingTimeUseCase:
     
     def __init__(
         self,
-        order_repository: OrderRepository,
-        warehouse_repository: WarehouseRepository,
+        order_repository: IOrderRepository,
+        warehouse_repository: IWarehouseRepository,
         order_service: OrderService,
         crm_client,
     ):

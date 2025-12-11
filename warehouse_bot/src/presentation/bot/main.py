@@ -9,7 +9,6 @@ from warehouse_bot.src.infrastructure.di.container import Container
 from warehouse_bot.src.infrastructure.logging.config import setup_logging
 from warehouse_bot.src.infrastructure.logging.utils import get_logger
 from warehouse_bot.src.presentation.bot.dispatcher import get_dispatcher
-from warehouse_bot.src.presentation.bot.middleware.di_middleware import DIMiddleware
 from warehouse_bot.src.presentation.bot.webhook_handler import WebhookHandler
 
 
@@ -95,15 +94,10 @@ async def on_startup(dispatcher: Dispatcher):
     container.config.from_dict(settings.model_dump())
 
     # Подключаем DI к нужным модулям
-    # Замените "presentation" на реальный путь к вашим хендлерам
     container.wire(packages=["warehouse_bot.src.presentation"])
 
-    # Сохраняем контейнер в диспетчере (опционально, если используете middleware)
+    # # Сохраняем контейнер в диспетчере
     dispatcher.container = container
-
-    # Регистрируем middleware (если вы НЕ используете @inject)
-    dispatcher.message.middleware(DIMiddleware(container))
-    dispatcher.callback_query.middleware(DIMiddleware(container))
 
     await logger.info("DI контейнер инициализирован. Бот запускается...")
 

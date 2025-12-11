@@ -1,8 +1,9 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from warehouse_bot.config.settings import settings
 from ..value_objects.order_status import OrderStatus
@@ -16,10 +17,10 @@ class Order(BaseModel):
     
     Attributes:
         id: Уникальный идентификатор заказа
-        order_number: Номер заказа (генерируется системой)
-        warehouse_id: ID склада/магазина, которому предназначен заказ
+        # order_number: Номер заказа (генерируется системой)
+        warehouse_address: адрес склада/магазина, которому предназначен заказ
         created_at: Время создания заказа
-        customer_name: Имя клиента
+        # customer_name: Имя клиента
         customer_phone: Телефон клиента
         delivery_address: Адрес доставки
         items: Список товаров в заказе
@@ -34,24 +35,26 @@ class Order(BaseModel):
         delivered_at: Время доставки
         photos: Ссылки на фотографии заказа
     """
-    id: UUID = Field(default_factory=uuid4)
-    order_number: str
-    warehouse_id: str
+    id: int
+    warehouse_address: str
     created_at: datetime
-    customer_name: str
-    customer_phone: str
+    customer_phone: Optional[str] = ""
+    customer_name: Optional[str] = ""
     delivery_address: str
+    delivery_price: Optional[str | int | float | Decimal] = None
     items: List[OrderItem]
     total_amount: Money
-    comment: Optional[str] = None
+    comment: Optional[str] = ""
     payment_type: str
-    status: OrderStatus = OrderStatus.NEW
+    payment_info: Optional[str] = ""
+    status: OrderStatus = OrderStatus.WAIT_FOR_ASSEMBLY
     accepted_at: Optional[datetime] = None
     cooking_time_minutes: Optional[int] = None
     expected_ready_at: Optional[datetime] = None
     courier_assigned_at: Optional[datetime] = None
     delivered_at: Optional[datetime] = None
     photos: List[str] = []
+    what_to_do: Optional[str] = None
 
     def calculate_total_amount(self) -> Money:
         """
@@ -60,7 +63,7 @@ class Order(BaseModel):
         Returns:
             Money: Общая сумма заказа
         """
-        total = sum((item.price.amount * item.quantity for item in self.items), 0)
+        total = Decimal(sum((item.price.amount * item.count for item in self.items), 0))
         return Money(amount=total)
 
     def add_photo(self, photo_url: str) -> None:

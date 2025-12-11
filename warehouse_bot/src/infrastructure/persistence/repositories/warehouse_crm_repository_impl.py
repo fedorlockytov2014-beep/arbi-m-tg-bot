@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ....infrastructure.logging import get_logger, log_server_action, log_error
 from ....infrastructure.integrations.crm_client import CRMClient
 from ....domain.entities.warehouse import Warehouse
@@ -8,7 +8,7 @@ from ....domain.entities.warehouse import Warehouse
 logger = get_logger(__name__)
 
 
-class WarehouseCrmRepositoryImpl(WarehouseRepository):
+class WarehouseCrmRepositoryImpl(IWarehouseRepository):
     """
     Реализация репозитория складов с использованием CRM API для проверки данных.
     """
@@ -90,104 +90,7 @@ class WarehouseCrmRepositoryImpl(WarehouseRepository):
             )
         
         return None
-    
-    async def get_all(self) -> List[Warehouse]:
-        """
-        Получает все склады из CRM.
-        """
-        try:
-            async with self._crm_client as client:
-                response = await client._make_request(
-                    method="GET",
-                    endpoint="/warehouses",
-                    expected_status=200
-                )
-                
-                if "data" in response and response["data"]:
-                    warehouses_data = response["data"]
-                    warehouses = []
-                    
-                    for warehouse_data in warehouses_data:
-                        warehouse = Warehouse(
-                            id=str(warehouse_data.get("id", "")),
-                            name=warehouse_data.get("name", ""),
-                            address=warehouse_data.get("address", ""),
-                            telegram_chat_id=warehouse_data.get("telegram_chat_id"),
-                            activation_code=warehouse_data.get("activation_code")
-                        )
-                        warehouses.append(warehouse)
-                    
-                    return warehouses
-        except Exception as e:
-            await log_error(
-                logger,
-                e,
-                context={
-                    "action": "get_all"
-                }
-            )
-        
-        return []
 
-    async def save(self, warehouse: Warehouse) -> Warehouse:
-        """
-        Сохраняет склад в CRM.
-        """
-        await log_server_action(
-            logger,
-            action="warehouse_save",
-            warehouse_id=warehouse.id
-        )
-        
-        try:
-            async with self._crm_client as client:
-                data = {
-                    "data": {
-                        "id": warehouse.id,
-                        "name": warehouse.name,
-                        "address": warehouse.address,
-                        "telegram_chat_id": warehouse.telegram_chat_id,
-                        "activation_code": warehouse.activation_code
-                    }
-                }
-                
-                response = await client._make_request(
-                    method="POST",
-                    endpoint="/warehouses",
-                    data=data,
-                    expected_status=201
-                )
-                
-                if "data" in response and response["data"]:
-                    saved_data = response["data"]
-                    result = Warehouse(
-                        id=str(saved_data.get("id", warehouse.id)),
-                        name=saved_data.get("name", warehouse.name),
-                        address=saved_data.get("address", warehouse.address),
-                        telegram_chat_id=saved_data.get("telegram_chat_id", warehouse.telegram_chat_id),
-                        activation_code=saved_data.get("activation_code", warehouse.activation_code)
-                    )
-                    
-                    await log_server_action(
-                        logger,
-                        action="warehouse_saved_successfully",
-                        result="success",
-                        warehouse_id=warehouse.id
-                    )
-                    
-                    return result
-        except Exception as e:
-            await log_error(
-                logger,
-                e,
-                context={
-                    "warehouse_id": warehouse.id,
-                    "action": "save"
-                }
-            )
-            raise
-        
-        return warehouse
 
     async def update(self, warehouse: Warehouse) -> Warehouse:
         """
@@ -249,43 +152,6 @@ class WarehouseCrmRepositoryImpl(WarehouseRepository):
         
         return warehouse
 
-    async def delete(self, warehouse_id: str) -> bool:
-        """
-        Удаляет склад из CRM.
-        """
-        await log_server_action(
-            logger,
-            action="warehouse_delete",
-            warehouse_id=warehouse_id
-        )
-        
-        try:
-            async with self._crm_client as client:
-                response = await client._make_request(
-                    method="DELETE",
-                    endpoint=f"/warehouses/{warehouse_id}",
-                    expected_status=200
-                )
-                
-                await log_server_action(
-                    logger,
-                    action="warehouse_deleted_successfully",
-                    result="success",
-                    warehouse_id=warehouse_id
-                )
-                
-                return True
-        except Exception as e:
-            await log_error(
-                logger,
-                e,
-                context={
-                    "warehouse_id": warehouse_id,
-                    "action": "delete"
-                }
-            )
-            return False
-
     async def find_by_activation_code(self, activation_code: str) -> Optional[Warehouse]:
         """
         Находит склад по коду активации в CRM.
@@ -297,7 +163,6 @@ class WarehouseCrmRepositoryImpl(WarehouseRepository):
                     endpoint=f"/warehouses/by-code/{activation_code}",
                     expected_status=200
                 )
-                
                 if "data" in response and response["data"]:
                     warehouses_data = response["data"]
                     if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
@@ -320,10 +185,3 @@ class WarehouseCrmRepositoryImpl(WarehouseRepository):
             )
         
         return None
-
-    async def deactivate_by_telegram_chat_id(self, chat_id: int) -> bool:
-        """
-        Деактивирует склад по ID Telegram-чата в CRM.
-        """
-        # CRM репозиторий не поддерживает деактивацию по чату, так как это локальная операция
-        raise NotImplementedError("CRM репозиторий не поддерживает деактивацию по ID чата. Используйте локальный репозиторий.")

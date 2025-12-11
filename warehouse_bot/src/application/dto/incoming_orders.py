@@ -1,10 +1,7 @@
-from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...domain.value_objects.cooking_time import CookingTime
 from ...domain.value_objects.order_status import OrderStatus
 
 

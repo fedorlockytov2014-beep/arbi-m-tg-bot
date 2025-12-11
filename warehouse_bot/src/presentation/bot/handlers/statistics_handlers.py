@@ -1,27 +1,26 @@
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
+from dependency_injector.wiring import inject, Provide
 
 from ....application.dto.statistics import TodayStatisticsDTO, WeeklyStatisticsDTO, MonthlyStatisticsDTO
 from ....application.use_cases.statistics import GetTodayStatisticsUseCase, GetWeeklyStatisticsUseCase, GetMonthlyStatisticsUseCase
-from ....domain.repositories.warehouse_repository import WarehouseRepository
+from ....domain.repositories.warehouse_db_repository import IWarehouseDBRepository
+from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ...formatters.stats_formatter import format_today_statistics, format_weekly_statistics, format_monthly_statistics, format_error_statistics
+from ....infrastructure.di.container import Container
 
-
-async def stats_command(message: Message, **kwargs):
+@inject
+async def stats_command(message: Message,
+                        warehouse_repository: IWarehouseRepository = Provide[Container.warehouse_repository],
+                        get_today_statistics_use_case: GetTodayStatisticsUseCase = Provide[Container.get_today_statistics_use_case],
+                        **kwargs):
     """
     Обработчик команды /stats.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
+    if not warehouse_repository or  not get_today_statistics_use_case:
         await message.reply("Ошибка: контейнер зависимостей не найден.")
         return
-    
-    # Получаем зависимости из контейнера
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    get_today_statistics_use_case: GetTodayStatisticsUseCase = container.get_today_statistics_use_case()
-    
+
     # Проверяем, привязан ли чат к складу
     warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
     
@@ -36,25 +35,17 @@ async def stats_command(message: Message, **kwargs):
         reply_markup=get_statistics_period_keyboard()
     )
 
-
-async def handle_stats_period_callback(callback: CallbackQuery, **kwargs):
+@inject
+async def handle_stats_period_callback(callback: CallbackQuery,
+                                       warehouse_repository: IWarehouseDBRepository = Provide[Container.warehouse_db_repository],
+                                       get_today_statistics_use_case: GetTodayStatisticsUseCase = Provide[Container.get_today_statistics_use_case],
+                                       get_weekly_statistics_use_case: GetWeeklyStatisticsUseCase = Provide[Container.get_weekly_statistics_use_case],
+                                       get_monthly_statistics_use_case: GetMonthlyStatisticsUseCase = Provide[Container.get_monthly_statistics_use_case],
+                                       **kwargs):
     """
     Обработчик выбора периода статистики.
     """
-    # Получаем контейнер из kwargs
-    container = kwargs.get('container')
-    if not container:
-        await callback.answer("Ошибка: контейнер зависимостей не найден.", show_alert=True)
-        return
-    
-    # Получаем зависимости из контейнера
-    warehouse_repository: WarehouseRepository = container.warehouse_repository()
-    get_today_statistics_use_case: GetTodayStatisticsUseCase = container.get_today_statistics_use_case()
-    get_weekly_statistics_use_case: GetWeeklyStatisticsUseCase = container.get_weekly_statistics_use_case()
-    get_monthly_statistics_use_case: GetMonthlyStatisticsUseCase = container.get_monthly_statistics_use_case()
-    
     period = callback.data.split('_')[1]  # stats_{period}
-    
     # Получаем склад по chat_id
     warehouse = await warehouse_repository.get_by_telegram_chat_id(callback.message.chat.id)
     if not warehouse:

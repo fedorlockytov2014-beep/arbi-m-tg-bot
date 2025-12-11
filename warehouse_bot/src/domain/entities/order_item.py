@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -19,7 +18,7 @@ class OrderItem(BaseModel):
     """
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1, max_length=255)
-    quantity: int = Field(..., gt=0)
+    count: int = Field(..., gt=0)
     price: Money
     
     def calculate_total_price(self) -> Money:
@@ -29,7 +28,7 @@ class OrderItem(BaseModel):
         Returns:
             Money: Общая стоимость товара
         """
-        total_amount = self.price.amount * self.quantity
+        total_amount = self.price.amount * self.count
         return Money(amount=total_amount)
     
     @property
