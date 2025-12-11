@@ -1,49 +1,41 @@
 ```
-# Python
-__pycache__/
+# Compiled and build artifacts
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
+__pycache__/
+
+# Dependencies
 .venv/
-.ENV
-.env
-.env.*
-.pytest_cache/
-.mypy_cache/
-.coverage
-coverage/
+venv/
+node_modules/
 
-# Build artifacts
-build/
-dist/
-*.egg-info/
-
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Environment
+.env
+.env.local
+.env.*
 
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
 
-# Compressed files
-*.zip
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.gz
-*.bz2
-*.xz
-*.7z
-*.rar
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Python specific
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+
+# Build directories
+build/
+dist/
 ```
-/warehouse_bot/config/config.yaml
