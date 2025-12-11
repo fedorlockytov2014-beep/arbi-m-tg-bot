@@ -9,7 +9,6 @@ env/
 venv/
 .venv/
 .ENV
-.ENV.*
 .env
 .env.*
 .pytest_cache/
@@ -35,4 +34,15 @@ Thumbs.db
 *.swp
 *.swo
 *.tmp
+
+# Compressed files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.gz
+*.bz2
+*.xz
+*.7z
+*.rar
 ```
