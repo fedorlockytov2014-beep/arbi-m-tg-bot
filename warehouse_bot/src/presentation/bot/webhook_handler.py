@@ -59,7 +59,7 @@ class WebhookHandler:
                 raise HTTPException(status_code=400, detail=f"Invalid order data: {str(e)}")
 
             # Получаем склад по ID
-            warehouse = await self.warehouse_repository.get_by_uid(order_data.warehouse_id)
+            warehouse = await self.warehouse_repository.get_by_id(order_data.warehouse_id)
             if not warehouse:
                 raise HTTPException(status_code=404, detail=f"Warehouse {order_data.warehouse_id} not found")
 

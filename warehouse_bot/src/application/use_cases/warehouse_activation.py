@@ -50,28 +50,30 @@ class ActivateWarehouseUseCase:
             user_id=data.chat_id,
             action="warehouse_activation_attempt",
             chat_id=data.chat_id,
-            warehouse_uid=data.warehouse_uid
+            warehouse_id=data.warehouse_id
         )
         
-        # Получение склада по UID
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        # Получение склада по ID
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
+        print(warehouse)
+        print(data)
         if not warehouse:
             await log_error(
                 logger,
-                WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден"),
+                WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден"),
                 context={
-                    "warehouse_uid": data.warehouse_uid,
+                    "warehouse_id": data.warehouse_id,
                     "chat_id": data.chat_id
                 }
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
         
         # Проверка, не активирован ли склад уже
         if warehouse.is_active and warehouse.telegram_chat_id is not None:
             await log_warning(
                 logger,
                 "Склад уже активирован",
-                warehouse_uid=data.warehouse_uid,
+                warehouse_id=data.warehouse_id,
                 current_chat_id=warehouse.telegram_chat_id,
                 attempted_chat_id=data.chat_id
             )
@@ -81,27 +83,27 @@ class ActivateWarehouseUseCase:
                     logger,
                     action="warehouse_already_activated_same_chat",
                     result="success",
-                    warehouse_uid=data.warehouse_uid
+                    warehouse_id=data.warehouse_id
                 )
                 return True
             else:
                 await log_error(
                     logger,
-                    WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} уже привязан к другому чату"),
+                    WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} уже привязан к другому чату"),
                     context={
-                        "warehouse_uid": data.warehouse_uid,
+                        "warehouse_id": data.warehouse_id,
                         "current_chat_id": warehouse.telegram_chat_id,
                         "attempted_chat_id": data.chat_id
                     }
                 )
-                raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} уже привязан к другому чату")
+                raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} уже привязан к другому чату")
 
         # Проверка кода активации
         if warehouse.activation_code != data.activation_code:
             await log_warning(
                 logger,
                 "Неверный код активации",
-                warehouse_uid=data.warehouse_uid,
+                warehouse_id=data.warehouse_id,
                 provided_code=data.activation_code,
                 expected_code=warehouse.activation_code,
                 chat_id=data.chat_id
@@ -120,7 +122,7 @@ class ActivateWarehouseUseCase:
                 user_id=data.chat_id,
                 action="warehouse_activated_successfully",
                 chat_id=data.chat_id,
-                warehouse_uid=warehouse.uid
+                warehouse_id=warehouse.id
             )
             
             return True
@@ -130,7 +132,7 @@ class ActivateWarehouseUseCase:
                 logger,
                 e,
                 context={
-                    "warehouse_uid": data.warehouse_uid,
+                    "warehouse_id": data.warehouse_id,
                     "chat_id": data.chat_id
                 }
             )

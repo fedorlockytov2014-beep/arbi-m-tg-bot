@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,6 @@ class Warehouse(BaseModel):
     
     Attributes:
         id: Уникальный идентификатор склада
-        uid: Уникальный идентификатор склада (публичный)
         name: Название склада/магазина
         address: Адрес склада/магазина
         phone: Контактный телефон
@@ -23,11 +22,10 @@ class Warehouse(BaseModel):
         max_orders_per_day: Максимальное количество заказов в день
         timezone: Часовой пояс склада
     """
-    id: UUID = Field(default_factory=uuid4)
-    uid: str = Field(..., min_length=1, max_length=100)
+    id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1, max_length=255)
     address: str = Field(..., min_length=1, max_length=500)
-    phone: str = Field(..., min_length=1, max_length=20)
+    # phone: str = Field(..., min_length=1, max_length=20)
     telegram_chat_id: Optional[int] = None
     activated_at: Optional[datetime] = None
     deactivated_at: Optional[datetime] = None

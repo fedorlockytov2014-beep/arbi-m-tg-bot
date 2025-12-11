@@ -74,28 +74,28 @@ class AcceptOrderUseCase:
             "Начало выполнения сценария принятия заказа",
             order_id=data.order_id,
             chat_id=data.chat_id,
-            warehouse_id=data.warehouse_uid
+            warehouse_id=data.warehouse_id
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
         if not warehouse:
             await logger.error(
                 "Склад не найден при попытке принять заказ",
-                warehouse_uid=data.warehouse_uid,
+                warehouse_id=data.warehouse_id,
                 order_id=data.order_id
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
             await logger.error(
                 "Попытка принять заказ для чужого склада",
-                warehouse_uid=data.warehouse_uid,
+                warehouse_id=data.warehouse_id,
                 chat_id=data.chat_id,
                 warehouse_chat_id=warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
-                f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
             )
             
         # Получение заказа
@@ -115,7 +115,7 @@ class AcceptOrderUseCase:
                 current_status=order.status.value
             )
             # Если заказ уже принят этим же складом - возвращаем его без ошибки
-            if order.warehouse_id == data.warehouse_uid and order.status == OrderStatus.ACCEPTED_BY_PARTNER:
+            if order.warehouse_id == data.warehouse_id and order.status == OrderStatus.ACCEPTED_BY_PARTNER:
                 await logger.info(
                     "Заказ уже принят этим складом, возврат текущего состояния",
                     order_id=data.order_id
@@ -127,14 +127,14 @@ class AcceptOrderUseCase:
             )
             
         # Проверка, что заказ относится к этому складу
-        if order.warehouse_id != data.warehouse_uid:
+        if order.warehouse_id != data.warehouse_id:
             await logger.error(
                 "Попытка принять заказ, не относящийся к складу",
                 order_id=data.order_id,
                 order_warehouse_id=order.warehouse_id,
-                target_warehouse_id=data.warehouse_uid
+                target_warehouse_id=data.warehouse_id
             )
-            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не относится к складу {data.warehouse_uid}")
+            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не относится к складу {data.warehouse_id}")
             
         # Обновление статуса заказа
         try:
@@ -237,39 +237,39 @@ class SetCookingTimeUseCase:
             "Начало выполнения сценария установки времени приготовления",
             order_id=data.order_id,
             chat_id=data.chat_id,
-            warehouse_id=data.warehouse_uid,
+            warehouse_id=data.warehouse_id,
             cooking_time_minutes=data.cooking_time_minutes
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
         if not warehouse:
-            logger.error(
+            await logger.error(
                 "Склад не найден при установке времени приготовления",
                 extra={
-                    "warehouse_uid": data.warehouse_uid,
+                    "warehouse_id": data.warehouse_id,
                     "order_id": data.order_id
                 }
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            logger.error(
+            await logger.error(
                 "Попытка установить время приготовления для чужого склада",
                 extra={
-                    "warehouse_uid": data.warehouse_uid,
+                    "warehouse_id": data.warehouse_id,
                     "chat_id": data.chat_id,
                     "warehouse_chat_id": warehouse.telegram_chat_id
                 }
             )
             raise WarehouseNotFoundException(
-                f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
             )
             
         # Получение заказа
         order = await self.order_repository.get_by_id(data.order_id)
         if not order:
-            logger.error(
+            await logger.error(
                 "Заказ не найден при установке времени приготовления",
                 extra={
                     "order_id": data.order_id
@@ -278,20 +278,20 @@ class SetCookingTimeUseCase:
             raise OrderNotFoundException(f"Заказ с ID {data.order_id} не найден")
             
         # Проверка, что заказ принадлежит этому складу
-        if order.warehouse_id != data.warehouse_uid:
-            logger.error(
+        if order.warehouse_id != data.warehouse_id:
+            await logger.error(
                 "Попытка установить время приготовления для чужого заказа",
                 extra={
                     "order_id": data.order_id,
                     "order_warehouse_id": order.warehouse_id,
-                    "target_warehouse_id": data.warehouse_uid
+                    "target_warehouse_id": data.warehouse_id
                 }
             )
-            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не принадлежит складу {data.warehouse_uid}")
+            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не принадлежит складу {data.warehouse_id}")
             
         # Проверка статуса заказа
         if order.status not in [OrderStatus.ACCEPTED_BY_PARTNER, OrderStatus.COOKING]:
-            logger.error(
+            await logger.error(
                 "Невозможно установить время приготовления для заказа в текущем статусе",
                 extra={
                     "order_id": data.order_id,
@@ -324,7 +324,7 @@ class SetCookingTimeUseCase:
                         cooking_time_minutes=data.cooking_time_minutes
                     )
                     
-                logger.info(
+                await logger.info(
                     "Статус заказа и время приготовления успешно обновлены в CRM системе",
                     extra={
                         "order_id": result.id,
@@ -350,7 +350,7 @@ class SetCookingTimeUseCase:
             return result
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при установке времени приготовления",
                 extra={
                     "order_id": data.order_id,

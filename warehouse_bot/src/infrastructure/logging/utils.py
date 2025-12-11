@@ -24,27 +24,27 @@ class Logger:
     
     async def debug(self, message: str, **kwargs: Any) -> None:
         """Логирование отладочной информации."""
-        self._logger.debug(message, **kwargs)
+        await self._logger.debug(message, **kwargs)
     
     async def info(self, message: str, **kwargs: Any) -> None:
         """Логирование информационных сообщений."""
-        self._logger.info(message, **kwargs)
+        await self._logger.info(message, **kwargs)
     
     async def warning(self, message: str, **kwargs: Any) -> None:
         """Логирование предупреждений."""
-        self._logger.warning(message, **kwargs)
+        await self._logger.warning(message, **kwargs)
     
     async def error(self, message: str, **kwargs: Any) -> None:
         """Логирование ошибок."""
-        self._logger.error(message, **kwargs)
+        await self._logger.error(message, **kwargs)
     
     async def critical(self, message: str, **kwargs: Any) -> None:
         """Логирование критических ошибок."""
-        self._logger.critical(message, **kwargs)
+        await self._logger.critical(message, **kwargs)
     
     async def exception(self, message: str, **kwargs: Any) -> None:
         """Логирование исключений."""
-        self._logger.exception(message, **kwargs)
+        await self._logger.exception(message, **kwargs)
 
 
 def get_logger(name: str) -> Logger:

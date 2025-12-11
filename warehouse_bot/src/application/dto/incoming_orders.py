@@ -14,11 +14,11 @@ class AcceptOrderDTO(BaseModel):
     
     Attributes:
         order_id: ID заказа
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         chat_id: ID Telegram-чата
     """
     order_id: str
-    warehouse_uid: str
+    warehouse_id: str
     chat_id: int
 
 
@@ -28,12 +28,12 @@ class SetCookingTimeDTO(BaseModel):
     
     Attributes:
         order_id: ID заказа
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         chat_id: ID Telegram-чата
         cooking_time_minutes: Время приготовления в минутах
     """
     order_id: str
-    warehouse_uid: str
+    warehouse_id: str
     chat_id: int
     cooking_time_minutes: int = Field(..., gt=0, le=180)
 
@@ -44,12 +44,12 @@ class UpdateOrderStatusDTO(BaseModel):
     
     Attributes:
         order_id: ID заказа
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         chat_id: ID Telegram-чата
         status: Новый статус заказа
     """
     order_id: str
-    warehouse_uid: str
+    warehouse_id: str
     chat_id: int
     status: OrderStatus
 
@@ -60,12 +60,12 @@ class AddOrderPhotoDTO(BaseModel):
     
     Attributes:
         order_id: ID заказа
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         chat_id: ID Telegram-чата
         photo_url: URL фотографии
     """
     order_id: str
-    warehouse_uid: str
+    warehouse_id: str
     chat_id: int
     photo_url: str
 
@@ -76,11 +76,11 @@ class GetOrderDetailsDTO(BaseModel):
     
     Attributes:
         order_id: ID заказа
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         chat_id: ID Telegram-чата
     """
     order_id: str
-    warehouse_uid: str
+    warehouse_id: str
     chat_id: int
 
 
@@ -89,11 +89,11 @@ class ActivateWarehouseDTO(BaseModel):
     DTO для активации склада.
     
     Attributes:
-        warehouse_uid: UID склада
+        warehouse_id: ID склада
         activation_code: Код активации
         chat_id: ID Telegram-чата
     """
-    warehouse_uid: str
+    warehouse_id: str
     activation_code: str
     chat_id: int
 

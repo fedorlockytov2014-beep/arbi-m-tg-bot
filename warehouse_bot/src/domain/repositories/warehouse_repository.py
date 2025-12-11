@@ -23,19 +23,6 @@ class WarehouseRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_uid(self, warehouse_uid: str) -> Optional[Warehouse]:
-        """
-        Получает склад по UID.
-        
-        Args:
-            warehouse_uid: UID склада
-            
-        Returns:
-            Warehouse: Склад или None если не найден
-        """
-        pass
-
-    @abstractmethod
     async def get_by_telegram_chat_id(self, chat_id: int) -> Optional[Warehouse]:
         """
         Получает склад по ID Telegram-чата.

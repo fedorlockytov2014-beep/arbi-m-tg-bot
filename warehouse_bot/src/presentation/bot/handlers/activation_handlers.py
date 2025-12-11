@@ -24,11 +24,11 @@ async def start_command(
     if hasattr(message, 'text') and ' ' in message.text:
         args = message.text.split(' ', 1)
         if len(args) > 1:
-            warehouse_uid = args[1]
+            warehouse_id = args[1]
             
             # Пытаемся активировать склад по UID
             dto = ActivateWarehouseDTO(
-                warehouse_uid=warehouse_uid,
+                warehouse_id=warehouse_id,
                 activation_code="",  # Для deep-link активации код не нужен
                 chat_id=message.chat.id
             )
@@ -39,7 +39,7 @@ async def start_command(
                 
                 if success:
                     # Получаем информацию о складе
-                    warehouse = await warehouse_repository.get_by_uid(warehouse_uid)
+                    warehouse = await warehouse_repository.get_by_id(warehouse_id)
                     if warehouse:
                         await message.reply(f"Магазин {warehouse.name} успешно привязан к этому чату!")
                     else:
@@ -98,7 +98,7 @@ async def process_activation_code(
     
     # Активируем склад
     dto = ActivateWarehouseDTO(
-        warehouse_uid=warehouse.uid,
+        warehouse_id=warehouse.id,
         activation_code=activation_code,
         chat_id=message.chat.id
     )
@@ -143,7 +143,7 @@ async def activate_warehouse_by_code_command(
     
     # Активируем склад
     dto = ActivateWarehouseDTO(
-        warehouse_uid=warehouse.uid,
+        warehouse_id=warehouse.id,
         activation_code=activation_code,
         chat_id=message.chat.id
     )

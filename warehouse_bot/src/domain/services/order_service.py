@@ -4,7 +4,7 @@ from typing import Optional
 from ..entities.order import Order
 from ..value_objects.cooking_time import CookingTime
 from ..value_objects.order_status import OrderStatus
-from ...infrastructure.logging import get_logger, log_server_action, log_error, log_warning
+from ...infrastructure.logging import get_logger, log_server_action, log_error
 
 logger = get_logger(__name__)
 

@@ -64,7 +64,7 @@ async def handle_stats_period_callback(callback: CallbackQuery, **kwargs):
     try:
         if period == "today":
             dto = TodayStatisticsDTO(
-                warehouse_uid=warehouse.uid,
+                warehouse_id=warehouse.id,
                 chat_id=callback.message.chat.id
             )
             stats = await get_today_statistics_use_case.execute(dto)
@@ -72,7 +72,7 @@ async def handle_stats_period_callback(callback: CallbackQuery, **kwargs):
             
         elif period == "week":
             dto = WeeklyStatisticsDTO(
-                warehouse_uid=warehouse.uid,
+                warehouse_id=warehouse.id,
                 chat_id=callback.message.chat.id
             )
             stats = await get_weekly_statistics_use_case.execute(dto)
@@ -80,7 +80,7 @@ async def handle_stats_period_callback(callback: CallbackQuery, **kwargs):
             
         elif period == "month":
             dto = MonthlyStatisticsDTO(
-                warehouse_uid=warehouse.uid,
+                warehouse_id=warehouse.id,
                 chat_id=callback.message.chat.id
             )
             stats = await get_monthly_statistics_use_case.execute(dto)

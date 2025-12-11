@@ -30,7 +30,7 @@ async def handle_new_order_callback(
     
     dto = AcceptOrderDTO(
         order_id=order_id,
-        warehouse_uid=warehouse.uid,
+        warehouse_id=warehouse.id,
         chat_id=callback.message.chat.id
     )
     
@@ -178,7 +178,7 @@ async def handle_cooking_time_message(
         
         dto = SetCookingTimeDTO(
             order_id=current_order_id,
-            warehouse_uid=warehouse.uid,
+            warehouse_id=warehouse.id,
             chat_id=message.chat.id,
             cooking_time_minutes=cooking_time_minutes
         )

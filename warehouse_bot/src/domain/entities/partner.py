@@ -30,26 +30,26 @@ class Partner(BaseModel):
     is_active: bool = True
     warehouses: List[str] = []
 
-    def add_warehouse(self, warehouse_uid: str) -> None:
+    def add_warehouse(self, warehouse_id: str) -> None:
         """
         Добавляет склад к партнёру.
         
         Args:
-            warehouse_uid: UID склада для добавления
+            warehouse_id: ID склада для добавления
         """
-        if warehouse_uid not in self.warehouses:
-            self.warehouses.append(warehouse_uid)
+        if warehouse_id not in self.warehouses:
+            self.warehouses.append(warehouse_id)
             self.updated_at = datetime.utcnow()
 
-    def remove_warehouse(self, warehouse_uid: str) -> None:
+    def remove_warehouse(self, warehouse_id: str) -> None:
         """
         Удаляет склад у партнёра.
         
         Args:
-            warehouse_uid: UID склада для удаления
+            warehouse_id: ID склада для удаления
         """
-        if warehouse_uid in self.warehouses:
-            self.warehouses.remove(warehouse_uid)
+        if warehouse_id in self.warehouses:
+            self.warehouses.remove(warehouse_id)
             self.updated_at = datetime.utcnow()
 
     def deactivate(self) -> None:

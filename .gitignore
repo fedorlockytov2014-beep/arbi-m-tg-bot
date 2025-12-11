@@ -79,3 +79,4 @@ Thumbs.db
 .env.local
 *.env.*
 ```
+/warehouse_bot/config/config.yaml

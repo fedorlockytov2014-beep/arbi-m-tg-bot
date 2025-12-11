@@ -107,7 +107,7 @@ async def orders_command(
             result="success",
             user_id=message.from_user.id,
             chat_id=message.chat.id,
-            warehouse_uid=warehouse.uid,
+            warehouse_id=warehouse.id,
             orders_count=len(new_orders)
         )
         

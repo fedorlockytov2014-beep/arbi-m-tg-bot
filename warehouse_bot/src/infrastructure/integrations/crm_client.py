@@ -193,26 +193,26 @@ class CRMClient:
         # Этот код не должен быть достигнут, но добавлен для безопасности
         raise IntegrationError(f"Необработанная ошибка при запросе к CRM API: {last_error}")
 
-    async def get_warehouse_by_uid(self, warehouse_uid: str) -> Dict[str, Any]:
-        """
-        Получает информацию о складе по UID из CRM.
-        
-        Args:
-            warehouse_uid: UID склада
-            
-        Returns:
-            Dict[str, Any]: Информация о складе
-        """
-        params = {
-            "filters[uid][$eq]": warehouse_uid
-        }
-        
-        return await self._make_request(
-            method="GET",
-            endpoint="/warehouses",
-            params=params,
-            expected_status=200
-        )
+    # async def get_warehouse_by_uid(self, warehouse_id: str) -> Dict[str, Any]:
+    #     """
+    #     Получает информацию о складе по UID из CRM.
+    #
+    #     Args:
+    #         warehouse_id: ID склада
+    #
+    #     Returns:
+    #         Dict[str, Any]: Информация о складе
+    #     """
+    #     params = {
+    #         "filters[uid][$eq]": warehouse_id
+    #     }
+    #
+    #     return await self._make_request(
+    #         method="GET",
+    #         endpoint="/warehouses",
+    #         params=params,
+    #         expected_status=200
+    #     )
 
     async def update_order_status(self, order_id: str, status: str, cooking_time_minutes: Optional[int] = None, photos: Optional[list] = None) -> Dict[str, Any]:
         """

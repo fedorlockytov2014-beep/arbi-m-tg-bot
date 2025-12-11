@@ -11,7 +11,7 @@ log_level: "DEBUG"
 # Возможные значения: JSON, CONSOLE
 # JSON - для production среды (машинно-читаемый формат)
 # CONSOLE - для разработки (читаемый человеком формат)
-log_format: "JSON"
+log_format: "CONSOLE"
 
 # ===============================
 # НАСТРОЙКИ TELEGRAM БОТА

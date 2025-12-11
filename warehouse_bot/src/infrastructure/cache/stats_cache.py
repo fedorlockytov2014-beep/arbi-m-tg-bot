@@ -1,13 +1,14 @@
 import json
-import logging
+
 from typing import Any, Dict, Optional, Union
 
 import redis.asyncio as redis
 from pydantic import BaseModel
 
 from warehouse_bot.config.settings import settings
+from warehouse_bot.src.infrastructure.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class StatsCache:
     """
@@ -45,13 +46,11 @@ class StatsCache:
             return json.loads(value)
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при получении значения из кеша",
-                extra={
-                    "key": key,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                key=key,
+                error= str(e),
+                exc_info=True
             )
             return None
         
@@ -79,24 +78,20 @@ class StatsCache:
             result = await self.redis_client.setex(key, ttl, json_value)
             
             if result:
-                logger.debug(
+                await logger.debug(
                     "Значение сохранено в кеш",
-                    extra={
-                        "key": key,
-                        "ttl": ttl
-                    }
+                    key=key,
+                    ttl=ttl
                 )
             
             return bool(result)
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при сохранении значения в кеш",
-                extra={
-                    "key": key,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                key=key,
+                error=str(e),
+                exc_info=True
             )
             return False
         
@@ -115,13 +110,11 @@ class StatsCache:
             return bool(result)
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при удалении значения из кеша",
-                extra={
-                    "key": key,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                key=key,
+                error=str(e),
+                exc_info=True
             )
             return False
         
@@ -140,12 +133,10 @@ class StatsCache:
             return bool(result)
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при проверке существования ключа в кеше",
-                extra={
-                    "key": key,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                key=key,
+                error=str(e),
+                exc_info=True
             )
             return False

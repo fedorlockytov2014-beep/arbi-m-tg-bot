@@ -4,7 +4,6 @@ from ....domain.repositories.warehouse_repository import WarehouseRepository
 from ....infrastructure.logging import get_logger, log_server_action, log_error
 from ....infrastructure.integrations.crm_client import CRMClient
 from ....domain.entities.warehouse import Warehouse
-from ....domain.value_objects.warehouse_id import WarehouseId
 
 logger = get_logger(__name__)
 
@@ -34,16 +33,17 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     endpoint=f"/warehouses/{warehouse_id}",
                     expected_status=200
                 )
-                
+
+                print("resp data", response["data"])
+
                 if "data" in response and response["data"]:
                     warehouse_data = response["data"]
                     return Warehouse(
-                        id=warehouse_data.get("id", warehouse_id),
-                        uid=warehouse_data.get("uid", ""),
+                        id=str(warehouse_data.get("id", warehouse_id)),
                         name=warehouse_data.get("name", ""),
                         address=warehouse_data.get("address", ""),
                         telegram_chat_id=warehouse_data.get("telegram_chat_id"),
-                        activation_code=warehouse_data.get("activation_code")
+                        activation_code=warehouse_data.get("activationCode")
                     )
         except Exception as e:
             await log_error(
@@ -56,81 +56,8 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             )
         
         return None
-    
-    async def get_by_uid(self, warehouse_uid: str) -> Optional[Warehouse]:
-        """
-        Получает склад по UID.
-        """
-        await log_server_action(
-            logger,
-            action="warehouse_get_by_uid",
-            warehouse_uid=warehouse_uid
-        )
-        
-        try:
-            async with self._crm_client as client:
-                response = await client.get_warehouse_by_uid(warehouse_uid)
-                
-                if "data" in response and response["data"]:
-                    warehouses_data = response["data"]
-                    # Возвращаем первый склад из результата
-                    if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
-                        warehouse_data = warehouses_data[0]
-                        warehouse = Warehouse(
-                            id=warehouse_data.get("id", warehouse_uid),
-                            uid=warehouse_data.get("uid", warehouse_uid),
-                            name=warehouse_data.get("name", ""),
-                            address=warehouse_data.get("address", ""),
-                            telegram_chat_id=warehouse_data.get("telegram_chat_id"),
-                            activation_code=warehouse_data.get("activation_code")
-                        )
-                        
-                        await log_server_action(
-                            logger,
-                            action="warehouse_found_by_uid",
-                            result="success",
-                            warehouse_uid=warehouse_uid
-                        )
-                        
-                        return warehouse
-                    elif isinstance(warehouses_data, dict):
-                        # Если возвращается один объект, а не массив
-                        warehouse = Warehouse(
-                            id=warehouses_data.get("id", warehouse_uid),
-                            uid=warehouses_data.get("uid", warehouse_uid),
-                            name=warehouses_data.get("name", ""),
-                            address=warehouses_data.get("address", ""),
-                            telegram_chat_id=warehouses_data.get("telegram_chat_id"),
-                            activation_code=warehouses_data.get("activation_code")
-                        )
-                        
-                        await log_server_action(
-                            logger,
-                            action="warehouse_found_by_uid",
-                            result="success",
-                            warehouse_uid=warehouse_uid
-                        )
-                        
-                        return warehouse
-        except Exception as e:
-            await log_error(
-                logger,
-                e,
-                context={
-                    "warehouse_uid": warehouse_uid,
-                    "action": "get_by_uid"
-                }
-            )
-            
-            await log_server_action(
-                logger,
-                action="warehouse_not_found_by_uid",
-                result="error",
-                warehouse_uid=warehouse_uid
-            )
-        
-        return None
-    
+
+
     async def get_by_telegram_chat_id(self, chat_id: int) -> Optional[Warehouse]:
         """
         Получает склад по ID Telegram-чата.
@@ -149,8 +76,8 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
                         warehouse_data = warehouses_data[0]
                         return Warehouse(
-                            id=warehouse_data.get("id", ""),
-                            uid=warehouse_data.get("uid", ""),
+                            id=str(warehouse_data.get("id", "")),
+                            # uid=warehouse_data.get("uid", ""),
                             name=warehouse_data.get("name", ""),
                             address=warehouse_data.get("address", ""),
                             telegram_chat_id=warehouse_data.get("telegram_chat_id", chat_id),
@@ -186,8 +113,8 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     
                     for warehouse_data in warehouses_data:
                         warehouse = Warehouse(
-                            id=WarehouseId(warehouse_data.get("id", "")),
-                            uid=warehouse_data.get("uid", ""),
+                            id=str(warehouse_data.get("id", "")),
+                            # uid=warehouse_data.get("uid", ""),
                             name=warehouse_data.get("name", ""),
                             address=warehouse_data.get("address", ""),
                             telegram_chat_id=warehouse_data.get("telegram_chat_id"),
@@ -214,14 +141,14 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         await log_server_action(
             logger,
             action="warehouse_save",
-            warehouse_uid=warehouse.uid
+            warehouse_id=warehouse.id
         )
         
         try:
             async with self._crm_client as client:
                 data = {
                     "data": {
-                        "uid": warehouse.uid,
+                        "id": warehouse.id,
                         "name": warehouse.name,
                         "address": warehouse.address,
                         "telegram_chat_id": warehouse.telegram_chat_id,
@@ -239,8 +166,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 if "data" in response and response["data"]:
                     saved_data = response["data"]
                     result = Warehouse(
-                        id=WarehouseId(saved_data.get("id", warehouse.id)),
-                        uid=saved_data.get("uid", warehouse.uid),
+                        id=str(saved_data.get("id", warehouse.id)),
                         name=saved_data.get("name", warehouse.name),
                         address=saved_data.get("address", warehouse.address),
                         telegram_chat_id=saved_data.get("telegram_chat_id", warehouse.telegram_chat_id),
@@ -251,7 +177,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         logger,
                         action="warehouse_saved_successfully",
                         result="success",
-                        warehouse_uid=warehouse.uid
+                        warehouse_id=warehouse.id
                     )
                     
                     return result
@@ -260,7 +186,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 logger,
                 e,
                 context={
-                    "warehouse_uid": warehouse.uid,
+                    "warehouse_id": warehouse.id,
                     "action": "save"
                 }
             )
@@ -275,7 +201,6 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         await log_server_action(
             logger,
             action="warehouse_update",
-            warehouse_uid=warehouse.uid,
             warehouse_id=warehouse.id
         )
         
@@ -283,7 +208,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             async with self._crm_client as client:
                 data = {
                     "data": {
-                        "uid": warehouse.uid,
+                        "id": warehouse.id,
                         "name": warehouse.name,
                         "address": warehouse.address,
                         "telegram_chat_id": warehouse.telegram_chat_id,
@@ -301,8 +226,8 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 if "data" in response and response["data"]:
                     updated_data = response["data"]
                     result = Warehouse(
-                        id=WarehouseId(updated_data.get("id", warehouse.id)),
-                        uid=updated_data.get("uid", warehouse.uid),
+                        id=str(updated_data.get("id", warehouse.id)),
+                        # uid=updated_data.get("uid", warehouse.uid),
                         name=updated_data.get("name", warehouse.name),
                         address=updated_data.get("address", warehouse.address),
                         telegram_chat_id=updated_data.get("telegram_chat_id", warehouse.telegram_chat_id),
@@ -313,7 +238,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                         logger,
                         action="warehouse_updated_successfully",
                         result="success",
-                        warehouse_uid=warehouse.uid
+                        warehouse_id=warehouse.id
                     )
                     
                     return result
@@ -322,7 +247,6 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                 logger,
                 e,
                 context={
-                    "warehouse_uid": warehouse.uid,
                     "warehouse_id": warehouse.id,
                     "action": "update"
                 }
@@ -376,8 +300,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             async with self._crm_client as client:
                 response = await client._make_request(
                     method="GET",
-                    endpoint="/warehouses",
-                    params={"filters[activation_code][$eq]": activation_code},
+                    endpoint=f"/warehouses/by-code/{activation_code}",
                     expected_status=200
                 )
                 
@@ -386,12 +309,12 @@ class WarehouseRepositoryImpl(WarehouseRepository):
                     if isinstance(warehouses_data, list) and len(warehouses_data) > 0:
                         warehouse_data = warehouses_data[0]
                         return Warehouse(
-                            id=WarehouseId(warehouse_data.get("id", "")),
-                            uid=warehouse_data.get("uid", ""),
+                            id=str(warehouse_data.get("id", "")),
+                            # uid=warehouse_data.get("uid", ""),
                             name=warehouse_data.get("name", ""),
                             address=warehouse_data.get("address", ""),
                             telegram_chat_id=warehouse_data.get("telegram_chat_id"),
-                            activation_code=warehouse_data.get("activation_code", activation_code)
+                            activation_code=warehouse_data.get("activationCode", activation_code)
                         )
         except Exception as e:
             await log_error(

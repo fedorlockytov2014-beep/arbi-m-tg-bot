@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 from typing import Dict, Union
 
@@ -10,8 +9,9 @@ from ...application.dto.statistics import (
 from ...application.exceptions import StatisticsCalculationError, WarehouseNotFoundException
 from ...domain.repositories.warehouse_repository import WarehouseRepository
 from ...infrastructure.cache.stats_cache import StatsCache
+from ...infrastructure.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class GetTodayStatisticsUseCase:
     """
@@ -57,36 +57,30 @@ class GetTodayStatisticsUseCase:
             WarehouseNotFoundException: Если склад не найден
             StatisticsCalculationError: При ошибках расчета статистики
         """
-        logger.info(
+        await logger.info(
             "Начало получения статистики за сегодня",
-            extra={
-                "warehouse_uid": data.warehouse_uid,
-                "chat_id": data.chat_id
-            }
+            warehouse_id=data.warehouse_id,
+            chat_id=data.chat_id
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
         if not warehouse:
-            logger.error(
+            await logger.error(
                 "Склад не найден при запросе статистики",
-                extra={
-                    "warehouse_uid": data.warehouse_uid
-                }
+                warehouse_id=data.warehouse_id
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            logger.error(
+            await logger.error(
                 "Попытка получить статистику для чужого склада",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "chat_id": data.chat_id,
-                    "warehouse_chat_id": warehouse.telegram_chat_id
-                }
+                warehouse_id=data.warehouse_id,
+                chat_id=data.chat_id,
+                warehouse_chat_id=warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
-                f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
             )
             
         # Получение текущей даты в UTC
@@ -100,27 +94,23 @@ class GetTodayStatisticsUseCase:
         
         try:
             # Попытка получить статистику из кеша
-            cache_key = f"stats:today:{data.warehouse_uid}:{today_start.date().isoformat()}"
+            cache_key = f"stats:today:{data.warehouse_id}:{today_start.date().isoformat()}"
             cached_stats = await self.stats_cache.get(cache_key)
             
             if cached_stats:
-                logger.debug(
+                await logger.debug(
                     "Статистика за сегодня получена из кеша",
-                    extra={
-                        "warehouse_uid": data.warehouse_uid,
-                        "cache_key": cache_key
-                    }
+                    warehouse_id=data.warehouse_id,
+                    cache_key=cache_key
                 )
                 return cached_stats
                 
             # Если нет в кеше - получаем из CRM
-            logger.debug(
+            await logger.debug(
                 "Получение статистики за сегодня из CRM",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "date_from": date_from,
-                    "date_to": date_to
-                }
+                warehouse_id=data.warehouse_id,
+                date_from= date_from,
+                date_to=date_to
             )
             
             # Здесь должен быть вызов CRM клиента для получения статистики
@@ -132,7 +122,7 @@ class GetTodayStatisticsUseCase:
             
             # Для примера используем тестовые данные
             stats_data = {
-                "warehouse_id": data.warehouse_uid,
+                "warehouse_id": data.warehouse_id,
                 "total_orders": 18,
                 "total_revenue": 23540,
                 "avg_check": 1307.78,
@@ -146,25 +136,21 @@ class GetTodayStatisticsUseCase:
                 ttl=60  # 1 minute for demo
             )
             
-            logger.info(
+            await logger.info(
                 "Статистика за сегодня успешно получена",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "orders": stats_data["total_orders"],
-                    "revenue": stats_data["total_revenue"]
-                }
+                warehouse_id=data.warehouse_id,
+                orders=stats_data["total_orders"],
+                revenue=stats_data["total_revenue"]
             )
             
             return stats_data
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при получении статистики за сегодня",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                warehouse_id=data.warehouse_id,
+                error=str(e),
+                exc_info=True
             )
             raise StatisticsCalculationError(
                 f"Не удалось получить статистику за сегодня: {str(e)}"
@@ -205,36 +191,30 @@ class GetWeeklyStatisticsUseCase:
             WarehouseNotFoundException: Если склад не найден
             StatisticsCalculationError: При ошибках расчета статистики
         """
-        logger.info(
+        await logger.info(
             "Начало получения статистики за неделю",
-            extra={
-                "warehouse_uid": data.warehouse_uid,
-                "chat_id": data.chat_id
-            }
+            warehouse_id=data.warehouse_id,
+            chat_id=data.chat_id
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
         if not warehouse:
-            logger.error(
+            await logger.error(
                 "Склад не найден при запросе статистики за неделю",
-                extra={
-                    "warehouse_uid": data.warehouse_uid
-                }
+                warehouse_id=data.warehouse_id
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            logger.error(
+            await logger.error(
                 "Попытка получить статистику за неделю для чужого склада",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "chat_id": data.chat_id,
-                    "warehouse_chat_id": warehouse.telegram_chat_id
-                }
+                warehouse_id=data.warehouse_id,
+                chat_id=data.chat_id,
+                warehouse_chat_id=warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
-                f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
             )
             
         # Получение дат для недели
@@ -248,22 +228,20 @@ class GetWeeklyStatisticsUseCase:
         
         try:
             # Попытка получить статистику из кеша
-            cache_key = f"stats:week:{data.warehouse_uid}:{week_start.date().isoformat()}"
+            cache_key = f"stats:week:{data.warehouse_id}:{week_start.date().isoformat()}"
             cached_stats = await self.stats_cache.get(cache_key)
             
             if cached_stats:
-                logger.debug(
+                await logger.debug(
                     "Статистика за неделю получена из кеша",
-                    extra={
-                        "warehouse_uid": data.warehouse_uid,
-                        "cache_key": cache_key
-                    }
+                    warehouse_id=data.warehouse_id,
+                    cache_key=cache_key
                 )
                 return cached_stats
                 
             # Для примера используем тестовые данные
             stats_data = {
-                "warehouse_id": data.warehouse_uid,
+                "warehouse_id": data.warehouse_id,
                 "total_orders": 126,
                 "total_revenue": 164780,
                 "avg_check": 1307.78,
@@ -277,25 +255,21 @@ class GetWeeklyStatisticsUseCase:
                 ttl=60  # 1 minute for demo
             )
             
-            logger.info(
+            await logger.info(
                 "Статистика за неделю успешно получена",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "orders": stats_data["total_orders"],
-                    "revenue": stats_data["total_revenue"]
-                }
+                warehouse_id=data.warehouse_id,
+                orders=stats_data["total_orders"],
+                revenue=stats_data["total_revenue"]
             )
             
             return stats_data
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при получении статистики за неделю",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                warehouse_id=data.warehouse_id,
+                error=str(e),
+                exc_info=True
             )
             raise StatisticsCalculationError(
                 f"Не удалось получить статистику за неделю: {str(e)}"
@@ -336,36 +310,30 @@ class GetMonthlyStatisticsUseCase:
             WarehouseNotFoundException: Если склад не найден
             StatisticsCalculationError: При ошибках расчета статистики
         """
-        logger.info(
+        await logger.info(
             "Начало получения статистики за месяц",
-            extra={
-                "warehouse_uid": data.warehouse_uid,
-                "chat_id": data.chat_id
-            }
+            warehouse_id=data.warehouse_id,
+            chat_id=data.chat_id
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_uid(data.warehouse_uid)
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
         if not warehouse:
-            logger.error(
+            await logger.error(
                 "Склад не найден при запросе статистики за месяц",
-                extra={
-                    "warehouse_uid": data.warehouse_uid
-                }
+                warehouse_id=data.warehouse_id
             )
-            raise WarehouseNotFoundException(f"Склад с UID {data.warehouse_uid} не найден")
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            logger.error(
+            await logger.error(
                 "Попытка получить статистику за месяц для чужого склада",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "chat_id": data.chat_id,
-                    "warehouse_chat_id": warehouse.telegram_chat_id
-                }
+                warehouse_id=data.warehouse_id,
+                chat_id=data.chat_id,
+                warehouse_chat_id=warehouse.telegram_chat_id
             )
             raise WarehouseNotFoundException(
-                f"Склад с UID {data.warehouse_uid} не привязан к данному чату"
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
             )
             
         # Получение дат для месяца
@@ -384,22 +352,20 @@ class GetMonthlyStatisticsUseCase:
         
         try:
             # Попытка получить статистику из кеша
-            cache_key = f"stats:month:{data.warehouse_uid}:{month_start.date().isoformat()}"
+            cache_key = f"stats:month:{data.warehouse_id}:{month_start.date().isoformat()}"
             cached_stats = await self.stats_cache.get(cache_key)
             
             if cached_stats:
-                logger.debug(
+                await logger.debug(
                     "Статистика за месяц получена из кеша",
-                    extra={
-                        "warehouse_uid": data.warehouse_uid,
-                        "cache_key": cache_key
-                    }
+                    warehouse_id=data.warehouse_id,
+                    cache_key=cache_key
                 )
                 return cached_stats
                 
             # Для примера используем тестовые данные
             stats_data = {
-                "warehouse_id": data.warehouse_uid,
+                "warehouse_id": data.warehouse_id,
                 "total_orders": 542,
                 "total_revenue": 704600,
                 "avg_check": 1300.00,
@@ -413,25 +379,21 @@ class GetMonthlyStatisticsUseCase:
                 ttl=900  # 15 minutes for demo
             )
             
-            logger.info(
+            await logger.info(
                 "Статистика за месяц успешно получена",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "orders": stats_data["total_orders"],
-                    "revenue": stats_data["total_revenue"]
-                }
+                warehouse_id=data.warehouse_id,
+                orders=stats_data["total_orders"],
+                revenue=stats_data["total_revenue"]
             )
             
             return stats_data
             
         except Exception as e:
-            logger.error(
+            await logger.error(
                 "Ошибка при получении статистики за месяц",
-                extra={
-                    "warehouse_uid": data.warehouse_uid,
-                    "error": str(e),
-                    "exc_info": True
-                }
+                warehouse_id=data.warehouse_id,
+                error=str(e),
+                exc_info=True
             )
             raise StatisticsCalculationError(
                 f"Не удалось получить статистику за месяц: {str(e)}"
