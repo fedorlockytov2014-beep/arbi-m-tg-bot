@@ -3,8 +3,8 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
-from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, AddOrderPhotoDTO
-from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase
+from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, AddOrderPhotoDTO, CancelOrderDTO
+from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase, CancelOrderUseCase
 from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ...formatters.order_formatter import format_order_message, format_order_status_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cooking_time_keyboard, get_ready_for_delivery_keyboard, get_confirm_ready_keyboard
@@ -43,6 +43,39 @@ async def handle_new_order_callback(
         await callback.answer("Заказ принят")
     except Exception as e:
         await callback.answer(f"Ошибка при принятии заказа: {str(e)}", show_alert=True)
+
+
+@inject
+async def handle_cancel_order_callback(
+    callback: CallbackQuery,
+    cancel_order_use_case: CancelOrderUseCase = Provide["cancel_order_use_case"],
+    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"]
+):
+    """
+    Обработчик нажатия кнопки 'Отменить заказ'.
+    """
+    order_id = callback.data.split('_')[2]  # cancel_order_{order_id}
+    
+    # Получаем склад по chat_id
+    warehouse = await warehouse_repository.get_by_telegram_chat_id(callback.message.chat.id)
+    if not warehouse:
+        await callback.answer("Склад не найден. Сначала активируйте склад.", show_alert=True)
+        return
+    
+    dto = CancelOrderDTO(
+        order_id=order_id,
+        warehouse_id=warehouse.id,
+        chat_id=callback.message.chat.id
+    )
+    
+    try:
+        order = await cancel_order_use_case.execute(dto)
+        await callback.message.edit_text(
+            text=f"Заказ {order_id} отменен!"
+        )
+        await callback.answer("Заказ отменен")
+    except Exception as e:
+        await callback.answer(f"Ошибка при отмене заказа: {str(e)}", show_alert=True)
 
 
 async def handle_cooking_time_callback(
@@ -208,6 +241,7 @@ def setup_order_handlers(dp: Dispatcher):
     """
     # Регистрация обработчиков
     dp.callback_query.register(handle_new_order_callback, lambda c: c.data.startswith('accept_order_'))
+    dp.callback_query.register(handle_cancel_order_callback, lambda c: c.data.startswith('cancel_order_'))
     dp.callback_query.register(handle_cooking_time_callback, lambda c: c.data.startswith('cooking_time_'))
     dp.callback_query.register(handle_ready_for_delivery_callback, lambda c: c.data.startswith('ready_for_delivery_'))
     dp.callback_query.register(handle_confirm_ready_callback, lambda c: c.data.startswith('confirm_ready_'))

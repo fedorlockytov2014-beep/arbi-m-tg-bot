@@ -198,6 +198,174 @@ class SetCookingTimeUseCase:
     - Обновление статуса заказа на "COOKING"
     - Интеграцию с CRM системой
     """
+
+
+class CancelOrderUseCase:
+    """
+    Use case для отмены заказа.
+    
+    Отвечает за:
+    - Проверку существования заказа
+    - Проверку прав доступа к заказу
+    - Отмену заказа
+    - Обновление статуса заказа на "CANCELLED"
+    - Интеграцию с CRM системой
+    """
+    
+    def __init__(
+        self,
+        order_repository: IOrderRepository,
+        warehouse_repository: IWarehouseRepository,
+        order_service: OrderService,
+        crm_client,
+    ):
+        """
+        Инициализирует use case.
+        
+        Args:
+            order_repository: Репозиторий для работы с заказами
+            warehouse_repository: Репозиторий для работы со складами
+            order_service: Сервис для бизнес-логики заказов
+            crm_client: Клиент для интеграции с CRM
+        """
+        self.order_repository = order_repository
+        self.warehouse_repository = warehouse_repository
+        self.order_service = order_service
+        self.crm_client = crm_client
+        
+    async def execute(self, data: CancelOrderDTO) -> Order:
+        """
+        Выполняет сценарий отмены заказа.
+        
+        Args:
+            data: DTO с данными для отмены заказа
+            
+        Returns:
+            Order: Обновленный заказ
+            
+        Raises:
+            OrderNotFoundException: Если заказ не найден
+            WarehouseNotFoundException: Если склад не найден
+            InvalidOrderStatusException: Если заказ в недопустимом статусе
+        """
+        await logger.info(
+            "Начало выполнения сценария отмены заказа",
+            order_id=data.order_id,
+            chat_id=data.chat_id,
+            warehouse_id=data.warehouse_id
+        )
+        
+        # Проверка, что склад существует и привязан к чату
+        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
+        if not warehouse:
+            await logger.error(
+                "Склад не найден при отмене заказа",
+                warehouse_id=data.warehouse_id,
+                order_id=data.order_id
+            )
+            raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
+            
+        if warehouse.telegram_chat_id != data.chat_id:
+            await logger.error(
+                "Попытка отменить заказ для чужого склада",
+                warehouse_id=data.warehouse_id,
+                chat_id=data.chat_id,
+                warehouse_chat_id=warehouse.telegram_chat_id
+            )
+            raise WarehouseNotFoundException(
+                f"Склад с ID {data.warehouse_id} не привязан к данному чату"
+            )
+            
+        # Получение заказа
+        order = await self.order_repository.get_by_id(data.order_id)
+        if not order:
+            await logger.error(
+                "Заказ не найден при отмене",
+                order_id=data.order_id
+            )
+            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не найден")
+            
+        # Проверка, что заказ принадлежит этому складу
+        if order.warehouse_id != data.warehouse_id:
+            await logger.error(
+                "Попытка отменить чужой заказ",
+                order_id=data.order_id,
+                order_warehouse_id=order.warehouse_id,
+                target_warehouse_id=data.warehouse_id
+            )
+            raise OrderNotFoundException(f"Заказ с ID {data.order_id} не принадлежит складу {data.warehouse_id}")
+            
+        # Проверка статуса заказа - можно отменить только если не доставлен и не отменен
+        if order.status in [OrderStatus.DELIVERED, OrderStatus.CANCELLED]:
+            await logger.error(
+                "Невозможно отменить заказ в текущем статусе",
+                order_id=data.order_id,
+                current_status=order.status.value
+            )
+            raise OrderAlreadyAcceptedException(
+                f"Невозможно отменить заказ со статусом {order.status.value}"
+            )
+            
+        # Отмена заказа
+        try:
+            updated_order = await self.order_service.cancel_order(
+                order=order
+            )
+            
+            # Сохраняем обновленный заказ
+            result = await self.order_repository.update(updated_order)
+            
+            # Интеграция с CRM: обновляем статус заказа в CRM системе
+            try:
+                async with self.crm_client as crm:
+                    await crm.update_order_status(
+                        order_id=data.order_id,
+                        status="cancelled"  # Это соответствует отмененному заказу
+                    )
+                    
+                await logger.info(
+                    "Статус заказа успешно обновлен в CRM системе",
+                    order_id=result.id,
+                    new_status="cancelled"
+                )
+            except Exception as e:
+                await logger.error(
+                    "Ошибка при обновлении статуса заказа в CRM системе",
+                    order_id=result.id,
+                    error=str(e)
+                )
+                # Не прерываем выполнение, так как локальное обновление прошло успешно
+            
+            await logger.info(
+                "Заказ успешно отменен",
+                order_id=result.id,
+                warehouse_id=result.warehouse_id,
+                previous_status=order.status.value,
+                new_status=result.status.value
+            )
+            
+            return result
+            
+        except Exception as e:
+            await logger.error(
+                "Ошибка при отмене заказа",
+                order_id=data.order_id,
+                error=str(e)
+            )
+            raise
+
+
+class SetCookingTimeUseCase:
+    """
+    Use case для установки времени приготовления заказа.
+    
+    Отвечает за:
+    - Проверку существования заказа
+    - Проверку прав доступа к заказу
+    - Установку времени приготовления
+    - Обновление статуса заказа на "COOKING"
+    - Интеграцию с CRM системой
+    """
     
     def __init__(
         self,

@@ -61,6 +61,14 @@ class Container(containers.DeclarativeContainer):
         crm_client=crm_client
     )
     
+    cancel_order_use_case = Factory(
+        CancelOrderUseCase,
+        order_repository=order_repository,
+        warehouse_repository=warehouse_repository,
+        order_service=order_service,
+        crm_client=crm_client
+    )
+    
     set_cooking_time_use_case = Factory(
         SetCookingTimeUseCase,
         order_repository=order_repository,
