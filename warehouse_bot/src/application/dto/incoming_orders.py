@@ -133,3 +133,17 @@ class OrderItemDTO(BaseModel):
     name: str
     quantity: int
     price: float
+
+
+class CancelOrderDTO(BaseModel):
+    """
+    DTO для отмены заказа.
+    
+    Attributes:
+        order_id: ID заказа
+        warehouse_id: ID склада
+        chat_id: ID Telegram-чата
+    """
+    order_id: str
+    warehouse_id: str
+    chat_id: int
