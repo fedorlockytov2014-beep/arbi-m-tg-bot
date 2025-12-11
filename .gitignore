@@ -46,3 +46,4 @@ Thumbs.db
 *.7z
 *.rar
 ```
+/warehouse_bot/config/config.yaml
