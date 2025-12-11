@@ -35,4 +35,4 @@ Thumbs.db
 *.swp
 *.swo
 *.tmp
-```
+/warehouse_bot/config/config.yaml
