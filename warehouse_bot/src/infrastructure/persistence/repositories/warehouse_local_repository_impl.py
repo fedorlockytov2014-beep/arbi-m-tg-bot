@@ -213,3 +213,40 @@ class WarehouseLocalRepositoryImpl(WarehouseRepository):
             logger.error(f"Unexpected error while finding warehouse by activation code {activation_code}: {e}")
         
         return None
+
+    async def deactivate_by_telegram_chat_id(self, chat_id: int) -> bool:
+        """
+        Деактивирует склад по ID Telegram-чата.
+        """
+        try:
+            with self.SessionLocal() as session:
+                # Находим склад по ID чата
+                stmt = select(WarehouseModel).where(WarehouseModel.telegram_chat_id == chat_id)
+                result = session.execute(stmt)
+                model = result.scalar_one_or_none()
+                
+                if not model:
+                    logger.info(f"No warehouse found with chat ID {chat_id} to deactivate")
+                    return False
+                
+                # Обновляем поля для деактивации
+                update_stmt = (
+                    update(WarehouseModel)
+                    .where(WarehouseModel.id == model.id)
+                    .values(
+                        is_active=False,
+                        deactivated_at=datetime.utcnow(),
+                        telegram_chat_id=None  # Remove chat association
+                    )
+                )
+                session.execute(update_stmt)
+                session.commit()
+                
+                logger.info(f"Warehouse {model.id} deactivated successfully")
+                return True
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while deactivating warehouse by chat ID {chat_id}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error while deactivating warehouse by chat ID {chat_id}: {e}")
+            return False

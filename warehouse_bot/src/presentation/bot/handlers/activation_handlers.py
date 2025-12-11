@@ -159,6 +159,25 @@ async def activate_warehouse_by_code_command(
         await message.reply(f"Ошибка при активации склада: {str(e)}")
 
 
+@inject
+async def deactivate_command(
+    message: Message,
+    warehouse_repository: WarehouseRepository = Provide[Container.warehouse_repository]
+):
+    """
+    Обработчик команды /deactivate для отвязки склада от чата.
+    """
+    chat_id = message.chat.id
+    
+    # Деактивируем склад, привязанный к этому чату
+    success = await warehouse_repository.deactivate_by_telegram_chat_id(chat_id)
+    
+    if success:
+        await message.reply("Склад успешно отвязан от этого чата.")
+    else:
+        await message.reply("Не удалось отвязать склад. Возможно, к этому чату не привязан склад.")
+
+
 def setup_activation_handlers(dp: Dispatcher):
     """
     Настраивает обработчики активации.

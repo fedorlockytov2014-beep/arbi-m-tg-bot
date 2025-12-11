@@ -96,3 +96,16 @@ class WarehouseRepository(ABC):
             Warehouse: Склад или None если не найден
         """
         pass
+
+    @abstractmethod
+    async def deactivate_by_telegram_chat_id(self, chat_id: int) -> bool:
+        """
+        Деактивирует склад по ID Telegram-чата.
+        
+        Args:
+            chat_id: ID Telegram-чата
+            
+        Returns:
+            bool: True если деактивация прошла успешно
+        """
+        pass

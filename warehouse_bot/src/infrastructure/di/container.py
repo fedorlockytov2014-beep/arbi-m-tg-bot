@@ -67,7 +67,8 @@ class Container(containers.DeclarativeContainer):
     
     activate_warehouse_use_case = Factory(
         ActivateWarehouseUseCase,
-        warehouse_repository=warehouse_repository
+        warehouse_repository=warehouse_repository,
+        crm_client=crm_client
     )
     
     get_today_statistics_use_case = Factory(
