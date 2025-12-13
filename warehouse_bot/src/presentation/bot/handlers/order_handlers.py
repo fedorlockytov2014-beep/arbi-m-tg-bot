@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
 from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, AddOrderPhotoDTO, CancelOrderDTO
-from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase, CancelOrderUseCase
+from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase, CancelOrderUseCase, MarkOrderReadyWithPhotosUseCase, AddOrderPhotoUseCase
 from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ...formatters.order_formatter import format_order_message, format_order_status_message
 from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cooking_time_keyboard, get_ready_for_delivery_keyboard, get_confirm_ready_keyboard, get_accepted_order_keyboard
@@ -163,7 +163,8 @@ async def handle_ready_for_delivery_callback(
     await callback.answer("Отправьте фото заказа")
 
 
-async def handle_photo_upload(message: Message, state: FSMContext):
+@inject
+async def handle_photo_upload(message: Message, state: FSMContext, add_order_photo_use_case: AddOrderPhotoUseCase = Provide["add_order_photo_use_case"]):
     """
     Обработчик загрузки фото.
     """
@@ -197,9 +198,12 @@ async def handle_photo_upload(message: Message, state: FSMContext):
         await message.reply("Пожалуйста, отправьте именно фотографию заказа.")
 
 
+@inject
 async def handle_confirm_ready_callback(
     callback: CallbackQuery,
-    state: FSMContext
+    state: FSMContext,
+    mark_order_ready_use_case: MarkOrderReadyWithPhotosUseCase = Provide["mark_order_ready_use_case"],
+    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"]
 ):
     """
     Обработчик подтверждения готовности заказа.
@@ -211,31 +215,55 @@ async def handle_confirm_ready_callback(
         await callback.answer("Нельзя подтвердить готовность без фото!", show_alert=True)
         return
     
-    # Отправляем фото обратно пользователю как медиагруппу
-    photo_list = pending_photos[order_id]
-    media_group = []
+    # Получаем склад по chat_id
+    warehouse = await warehouse_repository.get_by_telegram_chat_id(callback.message.chat.id)
+    if not warehouse:
+        await callback.answer("Склад не найден. Сначала активируйте склад.", show_alert=True)
+        return
     
-    for i, photo_info in enumerate(photo_list):
-        if i == 0:  # Для первого фото добавляем текст
-            media_group.append(InputMediaPhoto(
-                media=photo_info['file_id'],
-                caption=f"Все правильно вы отправили, проверьте\n\nФотографий: {len(photo_list)}"
-            ))
-        else:
-            media_group.append(InputMediaPhoto(
-                media=photo_info['file_id']
-            ))
+    # Подготовим данные для use case
+    data = {
+        'order_id': order_id,
+        'chat_id': callback.message.chat.id,
+        'warehouse_id': warehouse.id,
+        'photos': [photo_info['file_id'] for photo_info in pending_photos[order_id]]
+    }
     
-    # Отправляем медиагруппу
-    await callback.message.answer_media_group(media_group)
-    
-    # Отправляем сообщение с кнопками
-    await callback.message.answer(
-        "Все правильно вы отправили, проверьте",
-        reply_markup=get_confirm_ready_keyboard(order_id)
-    )
-    
-    await callback.answer("Фотографии загружены, подтвердите готовность")
+    try:
+        # Вызываем use case для подтверждения готовности заказа
+        order = await mark_order_ready_use_case.execute(data)
+        
+        # Отправляем фото обратно пользователю как медиагруппу
+        photo_list = pending_photos[order_id]
+        media_group = []
+        
+        for i, photo_info in enumerate(photo_list):
+            if i == 0:  # Для первого фото добавляем текст
+                media_group.append(InputMediaPhoto(
+                    media=photo_info['file_id'],
+                    caption=f"Заказ {order_id} отмечен как готов к доставке\n\nФотографий: {len(photo_list)}"
+                ))
+            else:
+                media_group.append(InputMediaPhoto(
+                    media=photo_info['file_id']
+                ))
+        
+        # Отправляем медиагруппу
+        await callback.message.answer_media_group(media_group)
+        
+        # Отправляем сообщение с подтверждением
+        await callback.message.answer(
+            f"Заказ {order_id} отмечен как готов к доставке.\nКурьер будет направлен."
+        )
+        
+        # Удаляем фото из памяти после подтверждения
+        if order_id in pending_photos:
+            del pending_photos[order_id]
+        
+        await callback.answer("Заказ успешно отмечен как готов к доставке")
+        
+    except Exception as e:
+        await callback.answer(f"Ошибка при подтверждении готовности заказа: {str(e)}", show_alert=True)
 
 
 async def handle_change_photos_callback(

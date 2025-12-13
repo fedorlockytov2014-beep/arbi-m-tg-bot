@@ -98,3 +98,20 @@ class ICRMClient(ABC):
             IntegrationError: При ошибке отправки заказа
         """
         ...
+
+    @abstractmethod
+    async def add_order_photo(self, order_id: str, photo_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Добавляет фотографию к заказу в CRM.
+
+        Args:
+            order_id: Идентификатор заказа в CRM
+            photo_data: Данные фотографии (формат зависит от реализации CRM)
+
+        Returns:
+            Ответ CRM в виде словаря
+
+        Raises:
+            IntegrationError: При ошибке добавления фото
+        """
+        ...
