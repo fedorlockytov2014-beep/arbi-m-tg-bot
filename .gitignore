@@ -5,33 +5,59 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+env/
 venv/
 .venv/
+.venv*/
+.ENV
 .env
-.env.local
 .env.*
-
-# Logs and temp files
+.env.local
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 *.log
-*.tmp
-*.swp
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
 
-# Editors
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDEs
 .vscode/
 .idea/
 
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Build artifacts
-dist/
-build/
-*.egg-info/
-
-# Testing
-.pytest_cache/
-.mypy_cache/
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
 ```
-/warehouse_bot/config/config.yaml

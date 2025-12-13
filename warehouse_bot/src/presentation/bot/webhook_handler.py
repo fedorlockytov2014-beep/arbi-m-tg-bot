@@ -67,21 +67,21 @@ class WebhookHandler:
             if not warehouse.is_active or not warehouse.telegram_chat_id:
                 raise HTTPException(status_code=400, detail="Warehouse is not active or not linked to chat")
 
-            # Формируем сообщение о новом заказе
+            # Формируем сообщение о новом заказе в соответствии с ТЗ
+            items_text = "\n".join([
+                f" • {item['name']} ×{item['quantity']} — {item['price']} ₽"
+                for item in order_data.items
+            ])
+            
             order_message = (
-                f"📦 Новый заказ #{order_data.id}\n\n"
+                f"🆕 Новый заказ №ZK-{order_data.order_id}\n"
                 f"Клиент: {order_data.customer_name}\n"
                 f"Телефон: {order_data.customer_phone}\n"
                 f"Адрес: {order_data.delivery_address}\n"
-                f"Сумма: {order_data.total_amount} {order_data.currency}\n\n"
-                f"Состав заказа:\n"
+                f"Комментарий: {order_data.comment or 'нет'}\n\n"
+                f"Состав:\n{items_text}\n"
+                f"Итог: {order_data.total_amount} ₽"
             )
-            
-            for item in order_data.items:
-                order_message += f"- {item.name} x{item.quantity}\n"
-            
-            if order_data.comment:
-                order_message += f"\nКомментарий: {order_data.comment}"
 
             # Отправляем сообщение в Telegram
             try:
@@ -89,7 +89,7 @@ class WebhookHandler:
                 await self.bot.send_message(
                     chat_id=warehouse.telegram_chat_id,
                     text=order_message,
-                    reply_markup=get_order_actions_keyboard(order_data.id)
+                    reply_markup=get_order_actions_keyboard(str(order_data.order_id))
                 )
             except Exception as e:
                 # Логируем ошибку, но возвращаем успех, чтобы CRM не повторяла отправку

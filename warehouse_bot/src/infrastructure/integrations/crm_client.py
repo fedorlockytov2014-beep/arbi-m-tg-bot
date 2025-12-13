@@ -310,3 +310,27 @@ class CRMClient(ICRMClient):
             data=data,
             expected_status=201
         )
+
+    async def add_order_photo(self, order_id: str, photo_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Добавляет фотографию к заказу в CRM.
+
+        Args:
+            order_id: Идентификатор заказа в CRM
+            photo_data: Данные фотографии (формат зависит от реализации CRM)
+
+        Returns:
+            Ответ CRM в виде словаря
+        """
+        data = {
+            "data": {
+                "order_id": order_id,
+                "photo_data": photo_data
+            }
+        }
+
+        return await self._make_request(
+            method="POST",
+            endpoint=f"/orders/{order_id}/photos",
+            data=data
+        )
