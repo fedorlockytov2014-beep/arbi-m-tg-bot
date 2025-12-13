@@ -86,7 +86,7 @@ async def orders_command(
         # Получаем новые заказы для склада с определенными статусами
         new_orders = await order_repository.get_by_warehouse_and_status(
             warehouse_id=str(warehouse.id),
-            status=OrderStatus.WAIT_FOR_ASSEMBLY
+            status=OrderStatus.NEW
         )
         
         if not new_orders:

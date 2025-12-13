@@ -17,14 +17,14 @@ class OrderStatus(str, Enum):
         DELIVERED: заказ доставлен клиенту
         CANCELLED: заказ отменён (клиентом, курьером, партнёром или админом)
     """
-    NEW = "new"
-    SENT_TO_PARTNER = "sent_to_partner"
-    ACCEPTED_BY_PARTNER = "accepted_by_partner"
-    COOKING = "cooking"
-    READY_FOR_DELIVERY = "ready_for_delivery"
-    ON_DELIVERY = "on_delivery"
-    DELIVERED = "delivered"
-    CANCELLED = "cancelled"
+    NEW = "Новый"
+    SENT_TO_PARTNER = "Отправлен партнеру"
+    ACCEPTED_BY_PARTNER = "Принят партнером"
+    COOKING = "Готовится"
+    READY_FOR_DELIVERY = "Готов к отправке"
+    ON_DELIVERY = "Забран курьером"
+    DELIVERED = "Доставлен клиенту"
+    CANCELLED = "Отменен"
 
     def __str__(self) -> str:
         return self.value

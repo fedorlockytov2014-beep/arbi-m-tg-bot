@@ -48,7 +48,7 @@ class Order(BaseModel):
     comment: Optional[str] = ""
     payment_type: str
     payment_info: Optional[str] = ""
-    status: OrderStatus = OrderStatus.WAIT_FOR_ASSEMBLY
+    status: OrderStatus = OrderStatus.NEW
     accepted_at: Optional[datetime] = None
     cooking_time_minutes: Optional[int] = None
     expected_ready_at: Optional[datetime] = None

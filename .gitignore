@@ -34,3 +34,4 @@ build/
 .pytest_cache/
 .mypy_cache/
 ```
+/warehouse_bot/config/config.yaml
