@@ -69,7 +69,7 @@ class WebhookHandler:
 
             # Формируем сообщение о новом заказе
             order_message = (
-                f"📦 Новый заказ #{order_data.order_number}\n\n"
+                f"📦 Новый заказ #{order_data.id}\n\n"
                 f"Клиент: {order_data.customer_name}\n"
                 f"Телефон: {order_data.customer_phone}\n"
                 f"Адрес: {order_data.delivery_address}\n"
@@ -89,13 +89,13 @@ class WebhookHandler:
                 await self.bot.send_message(
                     chat_id=warehouse.telegram_chat_id,
                     text=order_message,
-                    reply_markup=get_order_actions_keyboard(order_data.order_number)
+                    reply_markup=get_order_actions_keyboard(order_data.id)
                 )
             except Exception as e:
                 # Логируем ошибку, но возвращаем успех, чтобы CRM не повторяла отправку
                 print(f"Error sending order notification to Telegram: {str(e)}")
 
-            return {"status": "success", "order_id": order_data.order_number}
+            return {"status": "success", "order_id": order_data.order_id}
 
         @app.post("/webhook/order/status")
         async def handle_order_status_webhook(

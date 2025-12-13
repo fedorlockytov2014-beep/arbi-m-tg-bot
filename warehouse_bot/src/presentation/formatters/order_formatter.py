@@ -25,7 +25,7 @@ def format_order_message(order: Order) -> str:
         f"🏠 <b>Адрес:</b> {order.delivery_address or "<i>нет</i>"}\n\n"
         f"📝 <b>Комментарий:</b> {order.comment or '<i>нет</i>'}\n\n"
         f"📋 <b>Состав заказа:</b>\n{items_text}\n\n"
-        f"🚚 <b>Стоимость доставки:</b> {order.delivery_price} ₽\n\n"
+        f"🚚 <b>Стоимость доставки:</b> {order.delivery_price or "0"} ₽\n\n"
         f"💰 <b>Итого:</b> {order.total_amount.amount} ₽\n"
         f"🕒 <b>Время создания:</b> {order.created_at.strftime('%H:%M') if order.created_at else '<i>не указано</i>'}"
     )
@@ -54,7 +54,7 @@ def format_order_status_message(order: Order) -> str:
         "cancelled": "отменен"
     }.get(order.status.value, order.status.value)
     
-    message = f"Заказ №{order.order_number} - статус: {status_text}"
+    message = f"Заказ №{order.id} - статус: {status_text}"
     
     if order.cooking_time_minutes:
         message += f"\nВремя готовки: {order.cooking_time_minutes} мин"

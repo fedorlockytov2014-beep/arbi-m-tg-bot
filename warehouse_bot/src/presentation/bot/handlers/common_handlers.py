@@ -3,6 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
+from ....domain.repositories.warehouse_db_repository import IWarehouseDBRepository
 from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ....domain.repositories.order_repository import IOrderRepository
 from ....domain.value_objects.order_status import OrderStatus
@@ -51,7 +52,7 @@ async def help_command(message: Message):
 @inject
 async def orders_command(
     message: Message,
-    warehouse_repository: IWarehouseRepository = Provide["warehouse_repository"],
+    warehouse_repository: IWarehouseDBRepository = Provide["warehouse_db_repository"],
     order_repository: IOrderRepository = Provide["order_repository"]
 ):
     """
@@ -68,7 +69,7 @@ async def orders_command(
     try:
         # Проверяем, привязан ли чат к складу
         warehouse = await warehouse_repository.get_by_telegram_chat_id(message.chat.id)
-        
+
         if not warehouse:
             response_text = "Сначала активируйте склад. Используйте команду /start и перейдите по ссылке активации."
             await message.reply(response_text)
@@ -82,8 +83,7 @@ async def orders_command(
             )
             return
         
-        # Получаем новые заказы для склада (с определенными статусами)
-        # В соответствии с ТЗ, показываем заказы с определенными статусами
+        # Получаем новые заказы для склада с определенными статусами
         new_orders = await order_repository.get_by_warehouse_and_status(
             warehouse_id=str(warehouse.id),
             status=OrderStatus.WAIT_FOR_ASSEMBLY

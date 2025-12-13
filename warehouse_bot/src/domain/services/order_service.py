@@ -37,14 +37,10 @@ class OrderService:
             bool: True если переход возможен, иначе False
         """
         valid_transitions = {
-            OrderStatus.NEW: [OrderStatus.SENT_TO_PARTNER],
-            OrderStatus.SENT_TO_PARTNER: [OrderStatus.ACCEPTED_BY_PARTNER, OrderStatus.CANCELLED],
-            OrderStatus.ACCEPTED_BY_PARTNER: [OrderStatus.COOKING, OrderStatus.CANCELLED],
-            OrderStatus.COOKING: [OrderStatus.READY_FOR_DELIVERY, OrderStatus.CANCELLED],
-            OrderStatus.READY_FOR_DELIVERY: [OrderStatus.ON_DELIVERY, OrderStatus.CANCELLED],
-            OrderStatus.ON_DELIVERY: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-            OrderStatus.DELIVERED: [],
-            OrderStatus.CANCELLED: []
+            OrderStatus.WAIT_FOR_ASSEMBLY: [OrderStatus.ORDER_CONFIRMED, OrderStatus.WAIT_FOR_CONFIRMATION],
+            OrderStatus.ORDER_CONFIRMED: [OrderStatus.ON_DELIVERY, OrderStatus.WAIT_FOR_CONFIRMATION],
+            OrderStatus.ON_DELIVERY: [OrderStatus.DELIVERED],
+            OrderStatus.DELIVERED: []
         }
 
         return to_status in valid_transitions.get(from_status, [])
@@ -63,7 +59,7 @@ class OrderService:
         Raises:
             ValueError: Если заказ уже принят или статус не позволяет принятие
         """
-        if order.status != OrderStatus.SENT_TO_PARTNER:
+        if order.status in [OrderStatus.ORDER_CONFIRMED.value, OrderStatus.ON_DELIVERY.value, OrderStatus.DELIVERED.value]:
             error_msg = f"Заказ со статусом {order.status} не может быть принят партнёром"
             await log_error(
                 logger,
@@ -71,7 +67,7 @@ class OrderService:
                 context={
                     "order_id": order.id,
                     "current_status": order.status.value,
-                    "expected_status": OrderStatus.SENT_TO_PARTNER.value
+                    "expected_status": OrderStatus.WAIT_FOR_ASSEMBLY.value
                 }
             )
             raise ValueError(error_msg)
@@ -81,7 +77,7 @@ class OrderService:
 
         # Создаём новый объект заказа с обновлёнными полями
         updated_order = order.copy(update={
-            "status": OrderStatus.ACCEPTED_BY_PARTNER,
+            "status": OrderStatus.ORDER_CONFIRMED,
             "accepted_at": accepted_at
         })
 

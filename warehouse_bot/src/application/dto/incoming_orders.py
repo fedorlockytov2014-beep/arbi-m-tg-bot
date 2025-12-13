@@ -100,7 +100,7 @@ class CreateOrderDTO(BaseModel):
     DTO для создания заказа.
     
     Attributes:
-        order_number: Номер заказа
+        order_id: Номер заказа
         warehouse_id: ID склада
         customer_name: Имя клиента
         customer_phone: Телефон клиента
@@ -110,7 +110,7 @@ class CreateOrderDTO(BaseModel):
         comment: Комментарий
         payment_type: Тип оплаты
     """
-    order_number: str
+    order_id: str | int
     warehouse_id: str
     customer_name: str
     customer_phone: str

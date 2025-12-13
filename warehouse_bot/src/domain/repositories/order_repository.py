@@ -24,12 +24,12 @@ class IOrderRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_by_number(self, order_number: str) -> Optional[Order]:
+    async def get_by_number(self, order_id: str) -> Optional[Order]:
         """
         Получает заказ по номеру.
         
         Args:
-            order_number: Номер заказа
+            order_id: Номер заказа
             
         Returns:
             Order: Заказ или None если не найден

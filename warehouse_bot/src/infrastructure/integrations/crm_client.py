@@ -8,12 +8,13 @@ from aiohttp import ClientError, ClientSession
 from warehouse_bot.config.settings import settings
 from ...application.exceptions import IntegrationError
 from ...domain.entities.order import Order
+from ...domain.repositories.crm_repository import ICRMClient
 from ...infrastructure.logging.utils import get_logger
 
 logger = get_logger(__name__)
 
 
-class CRMClient:
+class CRMClient(ICRMClient):
     """
     Клиент для интеграции с CRM системой.
     
@@ -286,7 +287,6 @@ class CRMClient:
         data = {
             "order_id": str(order.id),
             "warehouse_id": str(order.warehouse_id),
-            "order_number": order.order_number,
             "created_at": order.created_at.isoformat() if hasattr(order, 'created_at') and order.created_at else "",
             "customer_name": order.customer_name,
             "customer_phone": order.customer_phone,

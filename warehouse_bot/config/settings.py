@@ -20,11 +20,11 @@ class TelegramSettings(BaseModel):
     webhook: TelegramWebhookSettings = TelegramWebhookSettings()
 
 
-class DatabaseSettings(BaseModel):
-    url: str = "postgresql+asyncpg://user:password@localhost:5432/warehouse_bot"
-    echo_sql: bool = False
-    max_connections: int = 20
-    query_timeout: int = 30
+# class DatabaseSettings(BaseModel):
+#     url: str = "postgresql+asyncpg://user:password@localhost:5432/warehouse_bot"
+#     echo_sql: bool = False
+#     max_connections: int = 20
+#     query_timeout: int = 30
 
 
 class CacheTTLSettings(BaseModel):
@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     log_format: str = "JSON"
 
     telegram: TelegramSettings
-    database: DatabaseSettings
+    # database: DatabaseSettings
     cache: CacheSettings
     crm: CRMSettings
     photo_storage: PhotoStorageSettings

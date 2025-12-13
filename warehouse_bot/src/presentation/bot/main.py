@@ -70,7 +70,7 @@ async def main():
         await bot.session.close()
 
 
-async def run_api_server(app, host: str = "0.0.0.0", port: int = 8000):
+async def run_api_server(app, host: str = settings.webhook.host, port: int = settings.webhook.port):
     """
     Запускает сервер API.
     """

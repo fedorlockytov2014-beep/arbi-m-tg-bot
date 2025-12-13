@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 from dependency_injector.providers import Singleton, Factory
 
-from ...application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase
+from ...application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase, CancelOrderUseCase
 from ...application.use_cases.warehouse_activation import ActivateWarehouseUseCase
 from ...application.use_cases.statistics import GetTodayStatisticsUseCase, GetWeeklyStatisticsUseCase, GetMonthlyStatisticsUseCase
 from ...domain.services.order_service import OrderService
@@ -57,6 +57,7 @@ class Container(containers.DeclarativeContainer):
         AcceptOrderUseCase,
         order_repository=order_repository,
         warehouse_repository=warehouse_repository,
+        warehouse_db_repository=warehouse_db_repository,
         order_service=order_service,
         crm_client=crm_client
     )
@@ -88,17 +89,22 @@ class Container(containers.DeclarativeContainer):
         GetTodayStatisticsUseCase,
         warehouse_repository=warehouse_repository,
         warehouse_db_repository=warehouse_db_repository,
-        stats_cache=stats_cache
+        stats_cache=stats_cache,
+        crm_client=crm_client
     )
     
     get_weekly_statistics_use_case = Factory(
         GetWeeklyStatisticsUseCase,
         warehouse_repository=warehouse_repository,
-        stats_cache=stats_cache
+        warehouse_db_repository=warehouse_db_repository,
+        stats_cache=stats_cache,
+        crm_client=crm_client
     )
     
     get_monthly_statistics_use_case = Factory(
         GetMonthlyStatisticsUseCase,
         warehouse_repository=warehouse_repository,
-        stats_cache=stats_cache
+        warehouse_db_repository=warehouse_db_repository,
+        stats_cache=stats_cache,
+        crm_client=crm_client
     )

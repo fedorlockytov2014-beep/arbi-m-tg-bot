@@ -17,7 +17,7 @@ class Order(BaseModel):
     
     Attributes:
         id: Уникальный идентификатор заказа
-        # order_number: Номер заказа (генерируется системой)
+
         warehouse_address: адрес склада/магазина, которому предназначен заказ
         created_at: Время создания заказа
         # customer_name: Имя клиента
@@ -36,6 +36,7 @@ class Order(BaseModel):
         photos: Ссылки на фотографии заказа
     """
     id: int
+    warehouse_id: Optional[int] = None
     warehouse_address: str
     created_at: datetime
     customer_phone: Optional[str] = ""

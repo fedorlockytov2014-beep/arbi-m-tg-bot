@@ -1,13 +1,15 @@
 from datetime import datetime
 
-from ...application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO
+from ...application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDTO, CancelOrderDTO
 from ...application.exceptions import (
     OrderAlreadyAcceptedException,
     OrderNotFoundException,
     WarehouseNotFoundException
 )
 from ...domain.entities.order import Order
+from ...domain.repositories.crm_repository import ICRMClient
 from ...domain.repositories.order_repository import IOrderRepository
+from ...domain.repositories.warehouse_db_repository import IWarehouseDBRepository
 from ...domain.repositories.warehouse_repository import IWarehouseRepository
 from ...domain.services.order_service import OrderService
 from ...domain.value_objects.cooking_time import CookingTime
@@ -38,8 +40,9 @@ class AcceptOrderUseCase:
         self,
         order_repository: IOrderRepository,
         warehouse_repository: IWarehouseRepository,
+        warehouse_db_repository: IWarehouseDBRepository,
         order_service: OrderService,
-        crm_client,
+        crm_client: ICRMClient,
     ):
         """
         Инициализирует use case.
@@ -52,6 +55,7 @@ class AcceptOrderUseCase:
         """
         self.order_repository = order_repository
         self.warehouse_repository = warehouse_repository
+        self.warehouse_db_repository = warehouse_db_repository
         self.order_service = order_service
         self.crm_client = crm_client
         
@@ -78,7 +82,7 @@ class AcceptOrderUseCase:
         )
         
         # Проверка, что склад существует и привязан к чату
-        warehouse = await self.warehouse_repository.get_by_id(data.warehouse_id)
+        warehouse = await self.warehouse_db_repository.get_by_id(data.warehouse_id)
         if not warehouse:
             await logger.error(
                 "Склад не найден при попытке принять заказ",
@@ -88,8 +92,6 @@ class AcceptOrderUseCase:
             raise WarehouseNotFoundException(f"Склад с ID {data.warehouse_id} не найден")
             
         if warehouse.telegram_chat_id != data.chat_id:
-            print(warehouse.telegram_chat_id)
-            print(data.chat_id)
             await logger.error(
                 "Попытка принять заказ для чужого склада",
                 warehouse_id=data.warehouse_id,
@@ -102,6 +104,7 @@ class AcceptOrderUseCase:
             
         # Получение заказа
         order = await self.order_repository.get_by_id(data.order_id)
+        await logger.debug("Заказ получен из CRM", order=order)
         if not order:
             await logger.error(
                 "Заказ не найден при попытке принять",
@@ -110,14 +113,14 @@ class AcceptOrderUseCase:
             raise OrderNotFoundException(f"Заказ с ID {data.order_id} не найден")
             
         # Проверка, что заказ еще не принят
-        if order.status != OrderStatus.SENT_TO_PARTNER:
+        if order.status in [OrderStatus.ON_DELIVERY.value, OrderStatus.DELIVERED.value]:
             await logger.warning(
                 "Попытка принять заказ, который уже в работе",
                 order_id=data.order_id,
                 current_status=order.status.value
             )
             # Если заказ уже принят этим же складом - возвращаем его без ошибки
-            if order.warehouse_id == data.warehouse_id and order.status == OrderStatus.ACCEPTED_BY_PARTNER:
+            if order.warehouse_id == data.warehouse_id and order.status == OrderStatus.ORDER_CONFIRMED:
                 await logger.info(
                     "Заказ уже принят этим складом, возврат текущего состояния",
                     order_id=data.order_id
@@ -129,7 +132,7 @@ class AcceptOrderUseCase:
             )
             
         # Проверка, что заказ относится к этому складу
-        if order.warehouse_id != data.warehouse_id:
+        if int(order.warehouse_id) != int(data.warehouse_id):
             await logger.error(
                 "Попытка принять заказ, не относящийся к складу",
                 order_id=data.order_id,
@@ -153,13 +156,13 @@ class AcceptOrderUseCase:
                 async with self.crm_client as crm:
                     await crm.update_order_status(
                         order_id=data.order_id,
-                        status="Ожидает подтверждения"  # Это соответствует accepted_by_partner
+                        status=OrderStatus.ORDER_CONFIRMED.value  # Это соответствует 'Заказ подтвержден'
                     )
                     
                 await logger.info(
                     "Статус заказа успешно обновлен в CRM системе",
                     order_id=result.id,
-                    new_status="Ожидает подтверждения"
+                    new_status=OrderStatus.ORDER_CONFIRMED.value
                 )
             except Exception as e:
                 await logger.error(
@@ -187,19 +190,6 @@ class AcceptOrderUseCase:
             raise
 
 
-class SetCookingTimeUseCase:
-    """
-    Use case для установки времени приготовления заказа.
-    
-    Отвечает за:
-    - Проверку существования заказа
-    - Проверку прав доступа к заказу
-    - Установку времени приготовления
-    - Обновление статуса заказа на "COOKING"
-    - Интеграцию с CRM системой
-    """
-
-
 class CancelOrderUseCase:
     """
     Use case для отмены заказа.
@@ -217,7 +207,7 @@ class CancelOrderUseCase:
         order_repository: IOrderRepository,
         warehouse_repository: IWarehouseRepository,
         order_service: OrderService,
-        crm_client,
+        crm_client: ICRMClient,
     ):
         """
         Инициализирует use case.
@@ -372,7 +362,7 @@ class SetCookingTimeUseCase:
         order_repository: IOrderRepository,
         warehouse_repository: IWarehouseRepository,
         order_service: OrderService,
-        crm_client,
+        crm_client: ICRMClient,
     ):
         """
         Инициализирует use case.

@@ -49,7 +49,7 @@ class OrderRepositoryImpl(IOrderRepository):
         
         return None
     
-    async def get_by_number(self, order_number: str) -> Optional[Order]:
+    async def get_by_number(self, order_id: str) -> Optional[Order]:
         """
         Получает заказ по номеру.
         """
@@ -58,7 +58,7 @@ class OrderRepositoryImpl(IOrderRepository):
                 response = await client._make_request(
                     method="GET",
                     endpoint="/orders",
-                    params={"filters[order_number][$eq]": order_number},
+                    params={"filters[id][$eq]": order_id},
                     expected_status=200
                 )
                 
@@ -72,7 +72,7 @@ class OrderRepositoryImpl(IOrderRepository):
                 logger,
                 e,
                 context={
-                    "order_number": order_number,
+                    "order_id": order_id,
                     "action": "get_by_number"
                 }
             )
@@ -164,7 +164,6 @@ class OrderRepositoryImpl(IOrderRepository):
             async with self._crm_client as client:
                 data = {
                     "data": {
-                        "order_number": order.order_number,
                         "warehouse_id": str(order.warehouse_id),
                         "customer_name": order.customer_name,
                         "customer_phone": order.customer_phone,
@@ -175,7 +174,7 @@ class OrderRepositoryImpl(IOrderRepository):
                         "items": [
                             {
                                 "name": item.name,
-                                "quantity": item.quantity,
+                                "quantity": item.count,
                                 "price": float(item.price.amount)
                             }
                             for item in order.items
@@ -209,7 +208,6 @@ class OrderRepositoryImpl(IOrderRepository):
                 e,
                 context={
                     "order_id": str(order.id),
-                    "order_number": order.order_number,
                     "action": "save"
                 }
             )
@@ -231,7 +229,6 @@ class OrderRepositoryImpl(IOrderRepository):
             async with self._crm_client as client:
                 data = {
                     "data": {
-                        "order_number": order.order_number,
                         "warehouse_id": str(order.warehouse_id),
                         "customer_name": order.customer_name,
                         "customer_phone": order.customer_phone,
@@ -242,7 +239,7 @@ class OrderRepositoryImpl(IOrderRepository):
                         "items": [
                             {
                                 "name": item.name,
-                                "quantity": item.quantity,
+                                "quantity": item.count,
                                 "price": float(item.price.amount)
                             }
                             for item in order.items
@@ -276,7 +273,6 @@ class OrderRepositoryImpl(IOrderRepository):
                 e,
                 context={
                     "order_id": str(order.id),
-                    "order_number": order.order_number,
                     "action": "update"
                 }
             )
@@ -387,13 +383,15 @@ class OrderRepositoryImpl(IOrderRepository):
         items = []
         check: dict = order_data.get("check", {})
         if check:
-            for item_data in check["composition"]:
-                item = OrderItem(
-                    name=item_data.get("name", ""),
-                    count=item_data.get("count", 1),
-                    price=Money(amount=item_data.get("price", 0.0))
-                )
-                items.append(item)
+            composition: dict = check.get("composition", {})
+            if composition:
+                for item_data in composition:
+                    item = OrderItem(
+                        name=item_data.get("name", ""),
+                        count=item_data.get("count", 1),
+                        price=Money(amount=item_data.get("price", 0.0))
+                    )
+                    items.append(item)
         
         # Преобразуем статус
         status_value = order_data.get("status", "new")
@@ -406,6 +404,7 @@ class OrderRepositoryImpl(IOrderRepository):
 
         return Order(
             id=order_data.get("id", 0),
+            warehouse_id=warehouse.get("id", None),
             warehouse_address=warehouse.get("address", ""),
             customer_phone=customer.get("contactInfo", ""),
             customer_name=user_customer.get("personalName", ""),
