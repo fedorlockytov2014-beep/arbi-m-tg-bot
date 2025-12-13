@@ -8,17 +8,23 @@ class OrderStatus(str, Enum):
     Перечисление статусов заказа.
     
     Attributes:
-        WAIT_FOR_ASSEMBLY: Новый заказ, Ожидает сборки
-        WAIT_FOR_CONFIRMATION: Ожидает подтверждения
-        ORDER_CONFIRMED: Заказ подтвержден
-        ON_DELIVERY: Доставляется
-        DELIVERED: Заказ завершен
+        NEW: новый заказ (создан в системе, ещё не отправлен в бот / или только что отправлен)
+        SENT_TO_PARTNER: заказ отправлен в Telegram-бот партнёра
+        ACCEPTED_BY_PARTNER: партнёр нажал «Взять заказ»
+        COOKING: партнёр указал время готовности, заказ в процессе приготовления
+        READY_FOR_DELIVERY: партнёр отправил фото и подтвердил готовность
+        ON_DELIVERY: (опционально) заказ забрал курьер
+        DELIVERED: заказ доставлен клиенту
+        CANCELLED: заказ отменён (клиентом, курьером, партнёром или админом)
     """
-    WAIT_FOR_ASSEMBLY = "Ожидает сборки"
-    WAIT_FOR_CONFIRMATION = "Ожидает подтверждения"
-    ORDER_CONFIRMED = "Заказ подтвержден"
-    ON_DELIVERY = "Доставляется"
-    DELIVERED = "Заказ завершен"
+    NEW = "new"
+    SENT_TO_PARTNER = "sent_to_partner"
+    ACCEPTED_BY_PARTNER = "accepted_by_partner"
+    COOKING = "cooking"
+    READY_FOR_DELIVERY = "ready_for_delivery"
+    ON_DELIVERY = "on_delivery"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
 
     def __str__(self) -> str:
         return self.value

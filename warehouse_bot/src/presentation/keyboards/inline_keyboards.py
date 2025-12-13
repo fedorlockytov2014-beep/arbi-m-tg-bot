@@ -16,6 +16,16 @@ def get_order_actions_keyboard(order_id: str):
     return keyboard.as_markup()
 
 
+def get_accepted_order_keyboard(accepted_by: str, accepted_at: str):
+    """Клавиатура для принятого заказа."""
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(
+        text=f"Заказ принят ({accepted_by}); {accepted_at}",
+        callback_data="order_accepted_info"  # This is just a placeholder, no action needed
+    ))
+    return keyboard.as_markup()
+
+
 def get_cooking_time_keyboard():
     """Клавиатура с вариантами времени приготовления."""
     keyboard = InlineKeyboardBuilder()
@@ -44,6 +54,10 @@ def get_confirm_ready_keyboard(order_id: str):
     keyboard.add(InlineKeyboardButton(
         text="✅ Подтвердить готовность",
         callback_data=f"confirm_ready_{order_id}"
+    ))
+    keyboard.add(InlineKeyboardButton(
+        text="🔄 Изменить фотографии",
+        callback_data=f"change_photos_{order_id}"
     ))
     return keyboard.as_markup()
 
