@@ -1,22 +1,20 @@
-``
-# Compiled and build artifacts
-*.pyc
+```
+# Python
 __pycache__/
-
-# Dependencies
-.venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
 venv/
-node_modules/
+.venv/
+.env
+.env.local
+.env.*
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-
-# Environment
-.env
-.env.local
-.env.*
 
 # Editors
 .vscode/
@@ -27,17 +25,12 @@ node_modules/
 coverage/
 htmlcov/
 
-# Python specific
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg-info/
-.eggs/
-
-# Build directories
-build/
+# Build artifacts
 dist/
-```
-/warehouse_bot/config/config.yaml
+build/
+*.egg-info/
 
+# Testing
+.pytest_cache/
+.mypy_cache/
+```

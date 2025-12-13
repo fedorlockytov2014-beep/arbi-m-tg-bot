@@ -67,6 +67,22 @@ class AddOrderPhotoDTO(BaseModel):
     photo_url: str
 
 
+class MarkOrderReadyWithPhotosDTO(BaseModel):
+    """
+    DTO для отмечания заказа как готового с фотографиями.
+    
+    Attributes:
+        order_id: ID заказа
+        warehouse_id: ID склада
+        chat_id: ID Telegram-чата
+        photo_urls: Список URL фотографий
+    """
+    order_id: str
+    warehouse_id: str
+    chat_id: int
+    photo_urls: List[str]
+
+
 class GetOrderDetailsDTO(BaseModel):
     """
     DTO для получения деталей заказа.

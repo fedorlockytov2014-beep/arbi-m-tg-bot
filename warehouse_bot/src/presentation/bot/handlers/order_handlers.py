@@ -1,5 +1,5 @@
 from aiogram import Dispatcher
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto
 from aiogram.fsm.context import FSMContext
 from dependency_injector.wiring import Provide, inject
 
@@ -7,8 +7,22 @@ from ....application.dto.incoming_orders import AcceptOrderDTO, SetCookingTimeDT
 from ....application.use_cases.order_management import AcceptOrderUseCase, SetCookingTimeUseCase, CancelOrderUseCase
 from ....domain.repositories.warehouse_repository import IWarehouseRepository
 from ...formatters.order_formatter import format_order_message, format_order_status_message
-from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cooking_time_keyboard, get_ready_for_delivery_keyboard, get_confirm_ready_keyboard
+from ...keyboards.inline_keyboards import get_order_actions_keyboard, get_cooking_time_keyboard, get_ready_for_delivery_keyboard, get_confirm_ready_keyboard, get_accepted_order_keyboard
 from ..states import OrderProcessing
+from datetime import datetime
+
+
+# Глобальный словарь для хранения фото до подтверждения
+pending_photos = {}
+
+
+def format_datetime_for_display(dt: datetime) -> str:
+    """Форматирует дату и время для отображения в формате 'ДД месяц ЧЧ:ММ:СС'."""
+    months = [
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ]
+    return f"{dt.day} {months[dt.month - 1]} {dt.strftime('%H:%M:%S')}"
 
 
 @inject
@@ -36,9 +50,22 @@ async def handle_new_order_callback(
     
     try:
         order = await accept_order_use_case.execute(dto)
+        
+        # Формируем текст с информацией о принятии заказа
+        accepted_at_str = format_datetime_for_display(order.accepted_at) if order.accepted_at else "неизвестно"
+        
+        # Определяем отображаемое имя пользователя или ID
+        user_tag = f"@{callback.from_user.username}" if callback.from_user.username else f"ID: {callback.from_user.id}"
+        
+        # Обновляем сообщение с новой клавиатурой
         await callback.message.edit_text(
-            text=f"Заказ {order_id} принят!\nТеперь укажите время готовности (в минутах):",
-            reply_markup=get_cooking_time_keyboard()
+            text=f"Заказ {order_id} принят!\n"
+                 f"Текущий статус: {order.status}\n"
+                 f"Время создания: {order.created_at.strftime('%d %B %H:%M:%S') if order.created_at else 'неизвестно'}\n"
+                 f"Время принятия: {accepted_at_str}\n"
+                 f"Заявленное время готовности: {order.expected_ready_at.strftime('%d %B %H:%M:%S') if order.expected_ready_at else 'не установлено'}\n"
+                 f"Фактическое время готовности: {order.expected_ready_at.strftime('%d %B %H:%M:%S') if order.expected_ready_at else 'ожидается'}",
+            reply_markup=get_accepted_order_keyboard(user_tag, accepted_at_str)
         )
         await callback.answer("Заказ принят")
     except Exception as e:
@@ -147,10 +174,24 @@ async def handle_photo_upload(message: Message, state: FSMContext):
         await message.reply("Ошибка: неизвестный заказ. Пожалуйста, начните сначала.")
         return
     
+    # Проверяем, есть ли уже фото для этого заказа
+    if current_order_id not in pending_photos:
+        pending_photos[current_order_id] = []
+    
+    # Проверяем лимит фото
+    if len(pending_photos[current_order_id]) >= 5:
+        await message.reply("Достигнут лимит в 5 фотографий. Нажмите 'Подтвердить готовность' или 'Изменить фотографии'.")
+        return
+    
     # Получаем ID фото
     if message.photo:
         # Берем фото максимального качества
         photo_id = message.photo[-1].file_id
+        pending_photos[current_order_id].append({
+            'file_id': photo_id,
+            'caption': message.caption or ''
+        })
+        
         await message.reply(f"Фото заказа {current_order_id} получено. Можете отправить еще или нажмите 'Подтвердить готовность'.")
     else:
         await message.reply("Пожалуйста, отправьте именно фотографию заказа.")
@@ -165,17 +206,58 @@ async def handle_confirm_ready_callback(
     """
     order_id = callback.data.split('_')[2]  # confirm_ready_{order_id}
     
-    # Здесь должен быть вызов use case для обновления статуса заказа
-    # Пока просто показываем сообщение
-    await callback.message.edit_text(
-        f"Заказ {order_id} отмечен как готов к доставке.\n"
-        f"Курьер будет направлен."
+    # Проверяем, есть ли фото для этого заказа
+    if order_id not in pending_photos or not pending_photos[order_id]:
+        await callback.answer("Нельзя подтвердить готовность без фото!", show_alert=True)
+        return
+    
+    # Отправляем фото обратно пользователю как медиагруппу
+    photo_list = pending_photos[order_id]
+    media_group = []
+    
+    for i, photo_info in enumerate(photo_list):
+        if i == 0:  # Для первого фото добавляем текст
+            media_group.append(InputMediaPhoto(
+                media=photo_info['file_id'],
+                caption=f"Все правильно вы отправили, проверьте\n\nФотографий: {len(photo_list)}"
+            ))
+        else:
+            media_group.append(InputMediaPhoto(
+                media=photo_info['file_id']
+            ))
+    
+    # Отправляем медиагруппу
+    await callback.message.answer_media_group(media_group)
+    
+    # Отправляем сообщение с кнопками
+    await callback.message.answer(
+        "Все правильно вы отправили, проверьте",
+        reply_markup=get_confirm_ready_keyboard(order_id)
     )
     
-    # Сбрасываем состояние
-    await state.clear()
+    await callback.answer("Фотографии загружены, подтвердите готовность")
+
+
+async def handle_change_photos_callback(
+    callback: CallbackQuery,
+    state: FSMContext
+):
+    """
+    Обработчик изменения фотографий.
+    """
+    order_id = callback.data.split('_')[2]  # change_photos_{order_id}
     
-    await callback.answer("Заказ готов к доставке")
+    # Удаляем фото из памяти
+    if order_id in pending_photos:
+        del pending_photos[order_id]
+    
+    # Возвращаем к отправке фото
+    await callback.message.edit_text(
+        "Фотографии удалены. Отправьте, пожалуйста, фото собранного заказа (можно несколько).\n"
+        "После отправки нажмите кнопку 'Подтвердить готовность'."
+    )
+    
+    await callback.answer("Отправьте новые фотографии")
 
 
 @inject
@@ -245,6 +327,7 @@ def setup_order_handlers(dp: Dispatcher):
     dp.callback_query.register(handle_cooking_time_callback, lambda c: c.data.startswith('cooking_time_'))
     dp.callback_query.register(handle_ready_for_delivery_callback, lambda c: c.data.startswith('ready_for_delivery_'))
     dp.callback_query.register(handle_confirm_ready_callback, lambda c: c.data.startswith('confirm_ready_'))
+    dp.callback_query.register(handle_change_photos_callback, lambda c: c.data.startswith('change_photos_'))
     
     # Обработчик сообщений с фото
     dp.message.register(handle_photo_upload, lambda m: m.photo is not None)
